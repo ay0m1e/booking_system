@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.btn-primary {
+  @apply px-10 py-3 border border-gray-900 rounded-full text-[15px] tracking-wide transition-all;
+}
+
+.btn-primary:hover {
+  background-color: #2f4a34;
+  color: white;
+  border-color: #2f4a34;
+}
