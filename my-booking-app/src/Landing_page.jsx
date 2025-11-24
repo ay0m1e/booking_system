@@ -3,7 +3,10 @@ import "aos/dist/aos.css";
 import "./landingPage.css";
 import { useState } from "react";
 import { useEffect } from "react";
-import Button from "./Button";
+import { Link } from "react-router-dom";
+import Button from "./Button.jsx";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -17,56 +20,7 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <nav className="w-full px-6 sm:px-10 lg:px-16 py-6 flex items-center justify-between border-b border-gray-200 bg-white">
-        <h1 className="text-[24px] sm:text-[28px] font-light tracking-[0.15em] uppercase">
-          Mane Society
-        </h1>
-        <div className="hidden lg:flex items-center gap-10 text-[15px] font-light tracking-wide">
-          <a
-            href="#"
-            className="text-gray-700 hover:text-black transition-colors"
-          >
-            Services
-          </a>
-          <a
-            href="#"
-            className="text-gray-700 hover:text-black transition-colors"
-          >
-            Gallery
-          </a>
-          <a
-            href="#"
-            className="text-gray-700 hover:text-black transition-colors"
-          >
-            Book
-          </a>
-
-          <button className="ml-6 btn-primary px-6 py-2 text-[14px]">
-            Book Now
-          </button>
-        </div>
-        <button
-          className="lg:hidden text-gray-700 text-2xl"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? "✕" : "☰"}
-        </button>
-      </nav>
-
-      {menuOpen && (
-        <div className="lg:hidden w-full px-6 py-4 bg-white shadow-md border-b border-gray-200 flex flex-col gap-4 text-[16px] font-light tracking-wide">
-          <a href="#" className="text-gray-700 hover:text-black">
-            Services
-          </a>
-          <a href="#" className="text-gray-700 hover:text-black">
-            Gallery
-          </a>
-          <a href="#" className="text-gray-700 hover:text-black">
-            Book
-          </a>
-          <button className="btn-primary w-fit mt-2">Book Now</button>
-        </div>
-      )}
+      <Header />
 
       <section className="w-full flex justify-center">
         <div className="hero-container">
@@ -82,13 +36,15 @@ function LandingPage() {
               bespoke colourwork, and luxury grooming.
             </p>
 
-            <button className="btn-primary">Book Appointment</button>
+            <Link to="/services">
+              <button className="btn-primary">Book Appointment</button>{" "}
+            </Link>
           </div>
 
           {/* MIDDLE IMAGE */}
           <div className="hero-img-container" data-aos="zoom-in">
             <img
-              src="/salon-image.jpg"
+              src="/images/salon-image.jpg"
               alt="Salon"
               className="hero-image rounded-[36px] shadow-xl"
             />
@@ -117,13 +73,17 @@ function LandingPage() {
         </div>
       </section>
 
+      <div className="w-full flex justify-center mt-24 mb-10">
+        <div className="h-[2px] w-[120px] bg-[#cddfcd] rounded-full"></div>
+      </div>
+
       <section className="w-full flex justify-center mt-24">
         <div className="w-[92%] max-w-[1400px] px-6 sm:px-10 md:px-14 lg:px-20 py-20 bg-white rounded-[40px] shadow-md">
           <div className="flex flex-col lg:flex-row gap-14 items-center">
             {/* Left Image */}
             <div className="flex-1" data-aos="fade-up">
               <img
-                src="/stylist_at_work1.jpeg"
+                src="/images/stylist_at_work1.jpeg"
                 alt="Stylist at Work"
                 className="w-full rounded-[30px] shadow-lg object-cover"
               />
@@ -146,13 +106,144 @@ function LandingPage() {
                 session with intention, luxury, and detail.
               </p>
 
-              <button className="btn-primary w-fit" hoverColor="#d4af37">
-                Discover Our Story
-              </button>
+              <Button
+                label="Discover Our Story"
+                className="btn-primary w-fit text-[16px] px-10 py-4"
+                hoverColor="#766017ff"
+              />
             </div>
           </div>
         </div>
       </section>
+
+      <div className="w-full flex justify-center mt-24 mb-10">
+        <div className="h-[2px] w-[120px] bg-[#cddfcd] rounded-full"></div>
+      </div>
+
+      {/* GALLERY SECTION */}
+      <section id="gallery" className="w-full flex justify-center mt-32">
+        <div className="w-[92%] max-w-[1400px] px-6 sm:px-10 md:px-14 lg:px-20">
+          {/* Heading */}
+          <h3
+            className="text-4xl lg:text-5xl font-light tracking-tight text-center mb-16"
+            data-aos="fade-up"
+          >
+            Our Gallery
+          </h3>
+
+          {/* Gallery Grid */}
+          <div
+            className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6"
+            data-aos="fade-up"
+            data-aos-offset="200"
+            data-aos-duration="800"
+          >
+            <img
+              src="/images/gall_1.jpeg"
+              className="w-full rounded-[30px] shadow-lg hover:opacity-90 hover:scale-[1.02] transition-all"
+              data-aos="fade-up"
+            />
+
+            <img
+              src="/images/gall_2.jpeg"
+              className="w-full rounded-[30px] shadow-lg hover:opacity-90 hover:scale-[1.02] transition-all"
+              data-aos="fade-up"
+            />
+
+            <img
+              src="/images/gall_3.jpeg"
+              className="w-full rounded-[30px] shadow-lg hover:opacity-90 hover:scale-[1.02] transition-all"
+              data-aos="fade-up"
+              data-aos-delay="300"
+            />
+
+            <img
+              src="/images/gall_5.jpeg"
+              className="w-full rounded-[30px] shadow-lg hover:opacity-90 hover:scale-[1.02] transition-all"
+              data-aos="fade-up"
+            />
+
+            <img
+              src="/images/gall_6.jpeg"
+              className="w-full rounded-[30px] shadow-lg hover:opacity-90 hover:scale-[1.02] transition-all"
+              data-aos="fade-up"
+              data-aos-delay="150"
+            />
+
+            <img
+              src="/images/gall_8.jpeg"
+              className="w-full rounded-[30px] shadow-lg hover:opacity-90 hover:scale-[1.02] transition-all"
+              data-aos="fade-up"
+            />
+          </div>
+        </div>
+      </section>
+
+      <div className="w-full flex justify-center mt-24 mb-10">
+        <div className="h-[2px] w-[120px] bg-[#cddfcd] rounded-full"></div>
+      </div>
+
+      {/* TESTIMONIALS SECTION */}
+      <section id="testimonials" className="w-full flex justify-center mt-32">
+        <div className="w-[92%] max-w-[1400px] px-6 sm:px-10 md:px-14 lg:px-20">
+          {/* Heading */}
+          <h3
+            className="text-4xl lg:text-5xl font-light tracking-tight text-center mb-16"
+            data-aos="fade-up"
+          >
+            What Clients Say
+          </h3>
+
+          {/* Testimonials Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            {/* Card 1 */}
+            <div
+              className="bg-white p-10 rounded-[30px] shadow-lg border border-gray-200"
+              data-aos="fade-up"
+            >
+              <p className="text-gray-700 text-lg leading-[1.8] mb-6">
+                “Absolutely the best salon experience I've had. My stylist
+                understood exactly what I wanted and executed it perfectly.”
+              </p>
+              <h4 className="text-[#2f4a34] font-semibold tracking-wide text-lg">
+                Olamide T.
+              </h4>
+            </div>
+
+            {/* Card 2 */}
+            <div
+              className="bg-white p-10 rounded-[30px] shadow-lg border border-gray-200"
+              data-aos="fade-up"
+              data-aos-delay="150"
+            >
+              <p className="text-gray-700 text-lg leading-[1.8] mb-6">
+                “Elegant atmosphere, professional staff, and the attention to
+                detail is unmatched. My colour has never looked better.”
+              </p>
+              <h4 className="text-[#2f4a34] font-semibold tracking-wide text-lg">
+                Adebola O.
+              </h4>
+            </div>
+
+            {/* Card 3 */}
+            <div
+              className="bg-white p-10 rounded-[30px] shadow-lg border border-gray-200"
+              data-aos="fade-up"
+              data-aos-delay="300"
+            >
+              <p className="text-gray-700 text-lg leading-[1.8] mb-6">
+                “I left feeling like a brand new person. The quality, care and
+                creativity were exceptional.”
+              </p>
+              <h4 className="text-[#2f4a34] font-semibold tracking-wide text-lg">
+                Paula .
+              </h4>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }
