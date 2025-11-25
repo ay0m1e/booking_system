@@ -7,7 +7,9 @@ export default function Footer() {
       <footer className="site-footer__shell" data-aos="fade-up">
         <div className="site-footer__grid">
           <div>
-            <h2 className="site-footer__title">Mane Society</h2>
+            <h2 className="site-footer__title">
+              <Link to="/">Mane Society </Link>
+            </h2>
             <p className="site-footer__text">
               A modern unisex salon dedicated to precision, creativity and
               intentional luxury. Where your look is crafted with care.
@@ -33,7 +35,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/booking" className="site-footer__link">
+                <Link to="/services" className="site-footer__link">
                   Book Appointment
                 </Link>
               </li>

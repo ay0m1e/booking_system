@@ -116,7 +116,13 @@ export default function Booking() {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => {
+                  const picked = e.target.value;
+                  const today = new Date().toISOString().split("T")[0];
+                  if (picked < today) return; // ignore invalid date
+                  setSelectedDate(picked);
+                }}
                 className="booking__input"
               />
             </div>

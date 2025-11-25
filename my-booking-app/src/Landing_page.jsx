@@ -1,21 +1,10 @@
-import AOS from "aos";
-import "aos/dist/aos.css";
 import "./landingPage.css";
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Button from "./Button.jsx";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
 function LandingPage() {
-  useEffect(() => {
-    AOS.init({
-      duration: 900, // speed of animation
-      easing: "ease-out",
-      once: true, // animate only once
-    });
-  }, []);
-
   return (
     <div className="landing">
       <Header />
