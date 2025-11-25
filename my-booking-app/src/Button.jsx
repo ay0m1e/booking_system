@@ -1,28 +1,30 @@
 import { useState } from "react";
+import "./Button.css";
 
 export default function Button({
   label,
   hoverColor = "#2f4a34",
+  baseColor,
   className = "",
-  onClick = () => {}
+  onClick = () => {},
 }) {
   const [hovered, setHovered] = useState(false);
 
+  const buttonClasses = ["button", hovered ? "button--hovered" : "", className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <button
-      className={
-        // Tailwind styles for sizing, font, spacing, shape
-        "px-8 py-3 rounded-full text-[15px] font-light tracking-wide transition-all border " +
-        className
-      }
+      type="button"
+      className={buttonClasses}
       style={{
-        // only colour is dynamic
-        borderColor: hoverColor,
-        backgroundColor: hovered ? hoverColor : "transparent",
-        color: hovered ? "white" : hoverColor,
+        "--button-base": baseColor || hoverColor,
+        "--button-hover": hoverColor,
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
     >
       {label}
     </button>

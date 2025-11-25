@@ -1,0 +1,45 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-8);
+  border: 1px solid var(--button-base, var(--color-primary));
+  border-radius: var(--radius-pill);
+  background-color: transparent;
+  color: var(--button-base, var(--color-primary));
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-wide);
+  text-decoration: none;
+  transition: background-color var(--transition-base), color var(--transition-base),
+    border-color var(--transition-base), transform var(--transition-fast),
+    box-shadow var(--transition-base);
+}
+
+.button--hovered {
+  background-color: var(--button-hover, var(--button-base, var(--color-primary)));
+  color: #ffffff;
+  border-color: var(--button-hover, var(--button-base, var(--color-primary)));
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(47, 74, 52, 0.15);
+}
+
+.button--compact {
+  padding: var(--space-2) var(--space-6);
+  font-size: 0.875rem;
+}
+
+.button--small {
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8125rem;
+}
+
+.button--wide {
+  padding: var(--space-4) var(--space-10);
+  font-size: 1rem;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--button-hover, var(--button-base, var(--color-primary)));
+  outline-offset: 2px;
+}

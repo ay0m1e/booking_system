@@ -1,0 +1,106 @@
+.header {
+  width: 100%;
+  padding: var(--space-6) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+@media (min-width: 640px) {
+  .header {
+    padding-left: var(--space-10);
+    padding-right: var(--space-10);
+  }
+}
+
+@media (min-width: 1024px) {
+  .header {
+    padding-left: var(--space-16);
+    padding-right: var(--space-16);
+  }
+}
+
+.header__brand {
+  font-size: 1.5rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: var(--font-weight-light);
+  color: var(--color-text-strong);
+}
+
+@media (min-width: 640px) {
+  .header__brand {
+    font-size: 1.75rem;
+  }
+}
+
+.header__links {
+  display: none;
+  align-items: center;
+  gap: var(--space-10);
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-wide);
+}
+
+@media (min-width: 1024px) {
+  .header__links {
+    display: flex;
+  }
+}
+
+.header__link {
+  color: var(--color-text);
+  transition: color var(--transition-base);
+}
+
+.header__link:hover {
+  color: var(--color-text-strong);
+}
+
+.header__cta-button {
+  margin-left: var(--space-2);
+}
+
+.header__toggle {
+  display: block;
+  font-size: 1.5rem;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+}
+
+@media (min-width: 1024px) {
+  .header__toggle {
+    display: none;
+  }
+}
+
+.header__mobile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  font-size: 1rem;
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-wide);
+}
+
+.header__mobile-link {
+  color: var(--color-text);
+  transition: color var(--transition-base);
+}
+
+.header__mobile-link:hover {
+  color: var(--color-text-strong);
+}
+
+.header__mobile-button {
+  margin-top: var(--space-2);
+}

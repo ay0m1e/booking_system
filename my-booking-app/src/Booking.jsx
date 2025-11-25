@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Button from "./Button";
+import "./Booking.css";
 
 // 1-hour slots for the day
 const ALL_TIMES = [
@@ -88,98 +90,77 @@ export default function Booking() {
   const durationMinutes = SERVICE_DURATIONS[selectedService] || 60;
 
   return (
-    <>
+    <div className="booking-page">
       <Header />
 
-      <section className="w-full flex justify-center mt-16">
-        <div className="w-[92%] max-w-[1100px]">
-          {/* PAGE TITLE */}
-          <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-8">
-            Book an Appointment
-          </h1>
+      <section className="booking">
+        <div className="booking__container">
+          <h1 className="booking__title">Book an Appointment</h1>
 
-          {/* SERVICE + DATE CONTROLS */}
-          <div className="flex flex-col md:flex-row md:items-end gap-6 mb-12">
-            {/* SERVICE SELECTOR */}
-            <div className="flex-1">
-              <label className="block text-sm text-gray-600 mb-2">
-                Service
-              </label>
+          <div className="booking__controls">
+            <div className="booking__field">
+              <label className="booking__label">Service</label>
               <input
                 type="text"
                 value={selectedService}
                 onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-[#2f4a34] transition"
+                className="booking__input"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="booking__helper">
                 Duration: {durationMinutes} minutes
               </p>
             </div>
 
-            {/* DATE PICKER */}
-            <div className="w-full md:w-[220px]">
-              <label className="block text-sm text-gray-600 mb-2">Date</label>
+            <div className="booking__field booking__date-field">
+              <label className="booking__label">Date</label>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-[#2f4a34] transition"
+                className="booking__input"
               />
             </div>
           </div>
 
-          {/* SLOTS GRID */}
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-[#2f4a34]">
-              Available times
-            </h2>
+          <div className="booking__slots-header">
+            <h2 className="booking__slots-title">Available times</h2>
             {loading && (
-              <span className="text-sm text-gray-500">
-                Checking availability…
-              </span>
+              <span className="booking__loading">Checking availability…</span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-20">
+          <div className="booking__slots-grid">
             {slots.map((slot) => (
               <div
                 key={slot.time}
-                className={`rounded-2xl border px-4 py-3 flex flex-col gap-2
-                  ${
-                    slot.available
-                      ? "border-[#c8dec8] bg-[#f5fbf5]"
-                      : "border-gray-200 bg-gray-100 opacity-70"
-                  }
-                `}
+                className={`booking__slot-card ${
+                  slot.available
+                    ? "booking__slot-card--available"
+                    : "booking__slot-card--unavailable"
+                }`}
               >
-                <span className="text-[15px] font-medium text-gray-800">
-                  {slot.time}
-                </span>
+                <span className="booking__slot-time">{slot.time}</span>
 
                 {slot.available ? (
                   <Button
                     label="Book"
                     hoverColor="#2f4a34"
-                    className="px-3 py-1 text-[13px]"
-                  >
-                  </Button>
+                    className="button--small booking__slot-button"
+                  />
                 ) : (
-                  <span className="text-[12px] text-gray-500">Unavailable</span>
+                  <span className="booking__slot-status">Unavailable</span>
                 )}
               </div>
             ))}
 
-            {/* If backend sends no slots */}
             {!loading && slots.length === 0 && (
-              <p className="text-gray-500 text-sm col-span-full">
-                No slots found for this date.
-              </p>
+              <p className="booking__empty">No slots found for this date.</p>
             )}
           </div>
         </div>
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Button from "./Button";
+import "./Services.css";
 
 export default function Services() {
   const [activeTab, setActiveTab] = useState("ladies");
@@ -45,23 +46,17 @@ export default function Services() {
     <>
       <Header />
 
-      <section className="w-full flex justify-center mt-20">
-        <div className="w-[92%] max-w-[1400px]">
-          {/* PAGE TITLE */}
-          <h1 className="text-5xl font-light tracking-tight text-center mb-16">
-            Our Services
-          </h1>
+      <section className="services">
+        <div className="services__container">
+          <h1 className="services__title">Our Services</h1>
 
-          {/* TAB BUTTONS */}
-          <div className="flex justify-center gap-4 mb-12">
+          <div className="services__tabs">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-6 py-2 rounded-full text-[15px] tracking-wide transition ${
-                  activeTab === tab.key
-                    ? "bg-[#2f4a34] text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className={`services__tab ${
+                  activeTab === tab.key ? "services__tab--active" : ""
                 }`}
               >
                 {tab.label}
@@ -69,18 +64,12 @@ export default function Services() {
             ))}
           </div>
 
-          {/* SERVICES GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div className="services__grid">
             {services[activeTab].map((service, index) => (
-              <div
-                key={index}
-                className="bg-white p-8 rounded-[30px] shadow-md border border-gray-200 hover:shadow-lg transition"
-              >
-                <h3 className="text-xl font-medium tracking-wide mb-4 text-[#2f4a34]">
-                  {service}
-                </h3>
+              <div key={index} className="services__card">
+                <h3 className="services__card-title">{service}</h3>
 
-                <p className="text-gray-600 mb-6">
+                <p className="services__card-text">
                   A premium service tailored to your needs.
                 </p>
 
@@ -88,7 +77,7 @@ export default function Services() {
                   <Button
                     label="Book Now"
                     hoverColor="#2f4a34"
-                    className="px-6 py-2 text-sm"
+                    className="button--compact services__card-button"
                   />
                 </a>
               </div>

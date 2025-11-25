@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Button from "../Button";
 import { Link } from "react-router-dom";
+import "./Header.css";
 
 
 export default function Header() {
@@ -8,36 +9,33 @@ export default function Header() {
 
   return (
     <>
-      <nav className="w-full px-6 sm:px-10 lg:px-16 py-6 flex items-center justify-between border-b border-gray-200 bg-white">
-        {/* BRAND */}
-
-        <h1 className="text-[24px] sm:text-[28px] font-light tracking-[0.15em] uppercase">
+      <nav className="header">
+        <h1 className="header__brand">
           <Link to="/">Mane Society </Link>
         </h1>
 
-        {/* DESKTOP NAV */}
-        <div className="hidden lg:flex items-center gap-10 text-[15px] font-light tracking-wide">
+        <div className="header__links">
           <Link
             to="/"
-            className="text-gray-700 hover:text-black transition-colors"
+            className="header__link"
           >
             Home
           </Link>
           <Link
             to="/services"
-            className="text-gray-700 hover:text-black transition-colors"
+            className="header__link"
           >
             Services
           </Link>
           <Link
             to="/#gallery"
-            className="text-gray-700 hover:text-black transition-colors"
+            className="header__link"
           >
             Gallery
           </Link>
           <Link
             to="/#testimonials"
-            className="text-gray-700 hover:text-black transition-colors"
+            className="header__link"
           >
             Reviews
           </Link>
@@ -46,41 +44,39 @@ export default function Header() {
             <Button
               label="Book"
               hoverColor="#2f4a34"
-              className="px-6 py-2 text-[14px]"
+              className="button--compact header__cta-button"
             />
           </Link>
         </div>
 
-        {/* MOBILE MENU BUTTON */}
         <button
-          className="lg:hidden text-gray-700 text-2xl"
+          className="header__toggle"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? "✕" : "☰"}
         </button>
       </nav>
 
-      {/* MOBILE MENU */}
       {menuOpen && (
-        <div className="lg:hidden w-full px-6 py-4 bg-white shadow-md border-b border-gray-200 flex flex-col gap-4 text-[16px] font-light tracking-wide">
-          <a href="/" className="text-gray-700 hover:text-black">
+        <div className="header__mobile-menu">
+          <a href="/" className="header__mobile-link">
             Home
           </a>
-          <a href="/services" className="text-gray-700 hover:text-black">
+          <a href="/services" className="header__mobile-link">
             Services
           </a>
-          <a href="#gallery" className="text-gray-700 hover:text-black">
+          <a href="#gallery" className="header__mobile-link">
             Gallery
           </a>
-          <a href="#testimonials" className="text-gray-700 hover:text-black">
+          <a href="#testimonials" className="header__mobile-link">
             Reviews
           </a>
           <Link to="/services">
             <Button
               label="Book"
               hoverColor="#2f4a34"
-              className="w-fit mt-2"
-            ></Button>
+              className="button--compact header__mobile-button"
+            />
           </Link>
         </div>
       )}
