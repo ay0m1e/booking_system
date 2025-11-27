@@ -88,12 +88,14 @@ function LandingPage() {
                 From subtle enhancement to bold transformation, we tailor every
                 session with intention, luxury, and detail.
               </p>
-
-              <Button
-                label="Discover Our Story"
-                className="button--wide landing__story-button"
-                hoverColor="#766017ff"
-              />
+              <Link to="/services">
+                <Button
+                  label="Book a Session"
+                  className="button--wide landing__story-button"
+                  hoverColor="#766017ff"
+                />
+              </Link>
+              <div />
             </div>
           </div>
         </div>
