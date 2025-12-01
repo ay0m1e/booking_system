@@ -32,7 +32,6 @@ CORS (app)
 
 # JWT secret comes from .env so I never leak it into git.
 JWT_SECRET = os.getenv("JWT_SECRET")
-        app.logger.error(f"Failed to send email to {to_addr}: {send_err}")
 
 
 # Simple helper that wraps jwt.encode so I don't repeat expiry logic.

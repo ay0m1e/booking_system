@@ -67,12 +67,6 @@ export default function Header() {
               <Link to="/account" className="header__link">
                 Account
               </Link>
-              <Link to="/my-bookings" className="header__link">
-                My Bookings
-              </Link>
-              <Link to="/logout" className="header__link">
-                Logout
-              </Link>
             </>
           ) : (
             <>
@@ -124,20 +118,6 @@ export default function Header() {
                 onClick={() => setMenuOpen(false)}
               >
                 Account
-              </Link>
-              <Link
-                to="/my-bookings"
-                className="header__mobile-link"
-                onClick={() => setMenuOpen(false)}
-              >
-                My Bookings
-              </Link>
-              <Link
-                to="/logout"
-                className="header__mobile-link"
-                onClick={() => setMenuOpen(false)}
-              >
-                Logout
               </Link>
             </>
           ) : (
