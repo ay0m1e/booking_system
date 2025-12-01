@@ -18,18 +18,28 @@
   max-width: 1100px;
 }
 
+.booking__intro {
+  margin-bottom: var(--space-10);
+}
+
 .booking__title {
   font-size: 2.25rem;
   font-weight: var(--font-weight-light);
   letter-spacing: var(--tracking-tight);
   line-height: 1.1;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-2);
 }
 
 @media (min-width: 768px) {
   .booking__title {
     font-size: 3rem;
   }
+}
+
+.booking__subtitle {
+  font-size: 1rem;
+  color: var(--color-text-soft);
+  margin-top: var(--space-2);
 }
 
 .booking__controls {
@@ -89,6 +99,42 @@
   color: var(--color-text-soft);
 }
 
+.booking__helper-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.booking__helper-link:hover {
+  color: var(--color-primary-strong);
+}
+
+.booking__alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-soft);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-soft);
+  font-size: 0.9375rem;
+  margin-bottom: var(--space-6);
+}
+
+.booking__alert--error {
+  border-color: #fca5a5;
+  background-color: #fef2f2;
+  color: #7f1d1d;
+}
+
+.booking__alert--success {
+  border-color: #c7f1d4;
+  background-color: #f3fff7;
+  color: var(--color-primary);
+}
+
+.booking__alert--info {
+  border-color: var(--color-border);
+  background-color: var(--color-surface-soft);
+  color: var(--color-text);
+}
+
 .booking__slots-header {
   display: flex;
   align-items: center;
@@ -134,8 +180,26 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
   transition: box-shadow var(--transition-base), transform var(--transition-fast),
     border-color var(--transition-base);
+}
+
+.booking__slot-card:focus-visible {
+  box-shadow: 0 0 0 2px rgba(47, 74, 52, 0.25);
+  border-color: var(--color-primary);
+}
+
+.booking__slot-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+  transform: none;
 }
 
 .booking__slot-card--available {
@@ -143,7 +207,7 @@
   background: var(--color-surface-muted);
 }
 
-.booking__slot-card--available:hover {
+.booking__slot-card--available:not(:disabled):hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
@@ -152,6 +216,16 @@
   border-color: var(--color-border);
   background: var(--color-surface-soft);
   opacity: 0.7;
+}
+
+.booking__slot-card--owned {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.booking__slot-card--picked {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .booking__slot-time {
@@ -173,4 +247,80 @@
   grid-column: 1 / -1;
   font-size: 0.875rem;
   color: var(--color-text-soft);
+}
+
+.booking__notes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  margin-bottom: var(--space-10);
+}
+
+@media (min-width: 768px) {
+  .booking__notes-grid {
+    grid-template-columns: 2fr 1fr;
+    align-items: start;
+  }
+}
+
+.booking__textarea {
+  min-height: 140px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.booking__summary {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-soft);
+  padding: var(--space-4);
+  background-color: var(--color-surface-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.booking__summary-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+.booking__summary-line strong {
+  color: var(--color-text-strong);
+  font-weight: var(--font-weight-medium);
+}
+
+.booking__token-hint {
+  margin-top: var(--space-2);
+}
+
+.booking__action-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-16);
+}
+
+@media (min-width: 640px) {
+  .booking__action-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.booking__cta {
+  align-self: flex-start;
+}
+
+.booking__cta--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.booking__policy {
+  font-size: 0.8125rem;
+  color: var(--color-text-soft);
+  max-width: 420px;
 }

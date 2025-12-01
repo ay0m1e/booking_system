@@ -13,8 +13,9 @@ from db import get_db
 load_dotenv()
 
 
+# I keep a static schedule of slots so both frontend and backend stay in sync.
 TIME_SLOTS = [
-    "09:00"
+    "09:00",
     "10:00",
     "11:00",
     "12:00",
@@ -29,19 +30,23 @@ TIME_SLOTS = [
 app = Flask(__name__)
 CORS (app)
 
+# JWT secret comes from .env so I never leak it into git.
 JWT_SECRET = os.getenv("JWT_SECRET")
+        app.logger.error(f"Failed to send email to {to_addr}: {send_err}")
 
 
+# Simple helper that wraps jwt.encode so I don't repeat expiry logic.
 def create_token(user_id):
     payload = {
         "user_id" : user_id,
         "exp" : datetime.datetime.utcnow() + datetime.timedelta(days=7)
     }
-    
+        
     token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
     return token
 
 
+# Decorator that checks the Bearer header before hitting protected routes.
 def require_auth(f):
 
     @wraps(f)
@@ -60,6 +65,7 @@ def require_auth(f):
                 return jsonify({"error":"Invalid token"}), 401
             
         except jwt.ExpiredSignatureError:
+            # If the token is old I just ask the user to login again.
             return jsonify({"error": "Expired token"}), 401
         
         except jwt.InvalidTokenError:
@@ -70,6 +76,7 @@ def require_auth(f):
     return wrapper
 
 
+# Basic registration endpoint that hashes the password and stores the user.
 @app.post("/api/register")
 def register_user():
 
@@ -102,7 +109,7 @@ def register_user():
         user_id = cur.fetchone()["id"]
         connection.commit()
     except Exception as e:
-        #if email already exists, it will raise error
+        # if email already exists or DB issue pops up, I make sure to rollback.
         connection.rollback()
         return jsonify({"error": "Email already registered"})
     finally:
@@ -122,48 +129,44 @@ def register_user():
     })
 
 
+# Login endpoint checks credentials and returns a fresh token.
 @app.post("/api/login")
 def login_user():
-    data = request.get_json()
-    
-    
+    data = request.get_json() or {}
+
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
-    
-    
+
     if not email or not password:
-        return jsonify({"error":"Missing email or password"})
-    
+        return jsonify({"error": "Missing email or password"})
+
     connection = get_db()
     cur = connection.cursor()
-    
-    
+
     cur.execute("""
                 SELECT id, name, email, password_hash
                 FROM users
                 WHERE email = %s
                 """, (email,))
-    
+
     user = cur.fetchone()
     connection.close()
-    
+
     if not user:
         return jsonify({"error": "Invalid email or password"}), 401
-    
-    stored_hash = user ["password_hash"]
 
-    
+    stored_hash = user["password_hash"]
+
     correct_password = bcrypt.checkpw(
         password.encode("utf-8"),
         stored_hash.encode("utf-8")
     )
-    
+
     if not correct_password:
         return jsonify({"error": "Invalid email or password"})
-    
-    
+
     token = create_token(user["id"])
-    
+
     return jsonify({
         "token": token,
         "user": {
@@ -172,8 +175,8 @@ def login_user():
             "email": user["email"]
         }
     })
-    
 
+# Booking endpoint needs auth so I know who's making the reservation.
 @app.post("/api/book")
 @require_auth
 def book_appointment(user_id):
@@ -198,8 +201,22 @@ def book_appointment(user_id):
     connection = get_db()
     cur = connection.cursor()
     
+    cur.execute("""
+                SELECT name, email
+                FROM users
+                WHERE id = %s
+                """, (user_id,))
+    user_profile = cur.fetchone()
+    if not user_profile:
+        connection.close()
+        return jsonify({"error": "User profile not found"}), 404
+    
+    clientName = user_profile.get("name") or "Guest"
+    clientMail = user_profile.get("email") or ""
+    
     
     try:
+        # make sure the service/time combo isn't already taken by somebody else.
         cur.execute("""
             SELECT id FROM bookings
             WHERE date = %s AND time = %s AND service = %s;
@@ -242,6 +259,123 @@ def book_appointment(user_id):
     }), 201
     
     
+# Availability endpoint is public so the frontend can show slots.
+@app.get("/api/availability")
+def get_availability():
+    service =request.args.get("service", "").strip()
+    date_string = request.args.get("date","").strip()
     
+    if not service or not date_string:
+        return jsonify({"error":"Missing service or date"}), 400
+    
+    try:
+        date_main = datetime.date.fromisoformat(date_string)
+    except ValueError:
+        return jsonify({"error":"Invalid date format. Use YYYY-MM-DD"}), 400
+    
+    connection = get_db()
+    cur = connection.cursor()
+    
+    
+    cur.execute("""
+                SELECT time
+                FROM bookings
+                WHERE service = %s AND date = %s;
+                """, (service, date_main))
+    booked_slots = {row["time"] for row in cur.fetchall()}
+    connection.close()
+    
+    slots = {}
+    # I build a map of time => availability so the frontend can keep its UI simple.
+    now = datetime.datetime.now()
+
+    for slot in TIME_SLOTS:
+        # slot: "14:00"
+        slot_hour, slot_minute = map(int, slot.split(":"))
+
+        slot_dt = datetime.datetime.combine(date_main, datetime.time(slot_hour, slot_minute))
+
+        # Rule 1: slot already booked (existing logic)
+        if slot in booked_slots:
+            slots[slot] = False
+            continue
+
+        # Rule 2: slot is in the past (same day only)
+        if date_main == now.date() and slot_dt <= now:
+            slots[slot] = False
+            continue
+
+        # Otherwise available
+        slots[slot] = True
+        
+    return jsonify({
+        "service": service,
+        "date": date_string,
+        "slots": slots
+    })
+    
+    
+    
+# Authenticated endpoint so each user can review their own bookings.
+@app.get("/api/my-bookings")
+@require_auth
+def get_my_bookings(user_id):
+    
+    connection = get_db()
+    cur = connection.cursor()
+    
+    cur.execute("""
+                SELECT id, service, date, time, notes, created_at
+                FROM bookings
+                WHERE user_id = %s
+                ORDER BY date ASC, time ASC;
+                """, (user_id,))
+    
+    bookings = cur.fetchall()
+    connection.close()
+    
+    return jsonify({"bookings": bookings})
+
+
+@app.delete("/api/bookings/<int:booking_id>")
+def delete_booking(booking_id):
+    try:
+        auth_header = request.headers.get("Authorisation","")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error":"Missing or invalid token"}), 401
+        
+        token = auth_header.split("Bearer ")[1].strip()
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        user_id = payload.get("user_id")
+        if not user_id:
+            return jsonify({"error":"Invalid token payload"}), 401
+        
+    except Exception:
+        return jsonify({"error": "Authentication failed"}), 401
+
+    connection = get_db()
+    cur = connection.cursor()
+    
+    cur.execute("""
+        SELECT id FROM bookings
+        WHERE id = %s AND user_id = %s;
+    """, (booking_id, user_id))
+    
+    row = cur.fetchone()
+    if row is None:
+        connection.close()
+        return jsonify({"error": "Booking not found"}), 404
+
+    # 4. Delete the booking
+    cur.execute("""
+        DELETE FROM bookings
+        WHERE id = %s AND user_id = %s;
+    """, (booking_id, user_id))
+
+    connection.commit()
+    connection.close()
+
+    return jsonify({"success": True, "message": "Booking cancelled."})
+
 if __name__ == "__main__":
     app.run(debug=True)

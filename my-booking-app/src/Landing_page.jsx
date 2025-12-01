@@ -9,9 +9,11 @@ function LandingPage() {
     <div className="landing">
       <Header />
 
+      {/* Hero section sets the tone with bold headline, quick copy, and CTA. */}
       <section className="landing__hero">
         <div className="landing__hero-shell">
           <div className="landing__hero-copy" data-aos="fade-right">
+            {/* Hero copy stays short and punchy so visitors immediately feel the vibe. */}
             <h2 className="landing__hero-title">
               Redefining
               <br /> Salon Experience
@@ -41,6 +43,7 @@ function LandingPage() {
           </div>
 
           <div className="landing__hero-cards" data-aos="fade-left">
+            {/* These cards give quick peeks into signature services without overwhelming text. */}
             <div className="landing__card landing__card--dark">
               <h3 className="landing__card-title">Cut & Style</h3>
               <p className="landing__card-text">
@@ -62,6 +65,7 @@ function LandingPage() {
         <div className="landing__divider-bar"></div>
       </div>
 
+      {/* Story block mixes imagery + narrative so visitors understand our ethos. */}
       <section className="landing__story">
         <div className="landing__story-shell">
           <div className="landing__story-layout">
@@ -105,6 +109,7 @@ function LandingPage() {
         <div className="landing__divider-bar"></div>
       </div>
 
+      {/* Gallery strips show real work to build trust before booking. */}
       <section id="gallery" className="landing__gallery">
         <div className="landing__section-shell">
           <h3
@@ -165,6 +170,7 @@ function LandingPage() {
         <div className="landing__divider-bar"></div>
       </div>
 
+      {/* Social proof to reassure new visitors that the experience matches the visuals. */}
       <section id="testimonials" className="landing__testimonials">
         <div className="landing__section-shell">
           <h3

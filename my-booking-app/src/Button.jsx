@@ -8,7 +8,7 @@ export default function Button({
   className = "",
   onClick = () => {},
 }) {
-  const [hovered, setHovered] = useState(false);
+  const [hovered, setHovered] = useState(false); // track hover for CSS transitions
 
   const buttonClasses = ["button", hovered ? "button--hovered" : "", className]
     .filter(Boolean)
@@ -19,13 +19,14 @@ export default function Button({
       type="button"
       className={buttonClasses}
       style={{
-        "--button-base": baseColor || hoverColor,
+        "--button-base": baseColor || hoverColor, // let callers override palette
         "--button-hover": hoverColor,
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
     >
+      {/* Keeping only label here so this stays a dumb reusable button. */}
       {label}
     </button>
   );

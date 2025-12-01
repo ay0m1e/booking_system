@@ -1,19 +1,23 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, BrowserRouter, Routes, Route } from "react-router-dom";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
 import LandingPage from "./Landing_page";
 import Services from "./Services";
 import Booking from "./Booking";
-
+import Login from "./Login";
+import Register from "./Register";
+import Account from "./Account";
+import MyBookings from "./MyBookings";
+import Logout from "./Logout";
 
 import "./index.css";
 
 function ScrollToHash() {
+  // This hook watches the URL hash so clicking nav links scrolls smoothly.
   const location = useLocation();
 
   useEffect(() => {
@@ -30,6 +34,7 @@ function ScrollToHash() {
 }
 
 function AOSInitializer() {
+  // I keep AOS setup here so any route change replays the fade animations.
   const location = useLocation();
 
   useEffect(() => {
@@ -50,12 +55,19 @@ function AOSInitializer() {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
+      {/* Router-level helpers sit here so every page gets smooth scrolling + AOS. */}
       <AOSInitializer />
       <ScrollToHash />
       <Routes>
+        {/* Plain routing table keeps each page component easy to spot. */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/services" element={<Services />} />
         <Route path="/booking" element={<Booking />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

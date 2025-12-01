@@ -6,6 +6,7 @@ export default function Footer() {
     <section className="site-footer">
       <footer className="site-footer__shell" data-aos="fade-up">
         <div className="site-footer__grid">
+          {/* Left column repeats the brand story for visitors landing mid-page. */}
           <div>
             <h2 className="site-footer__title">
               <Link to="/">Mane Society </Link>
@@ -17,6 +18,7 @@ export default function Footer() {
           </div>
 
           <div>
+            {/* Middle column gives quick navigation for folks scrolling to the end. */}
             <h3 className="site-footer__heading">Explore</h3>
             <ul className="site-footer__links">
               <li>
@@ -43,6 +45,7 @@ export default function Footer() {
           </div>
 
           <div>
+            {/* Contact info stays visible here so it's easy to copy into phones. */}
             <h3 className="site-footer__heading">Contact Us</h3>
             <ul className="site-footer__contact">
               <li>📍 12 Liverpool Street, London</li>
@@ -53,6 +56,7 @@ export default function Footer() {
         </div>
 
         <div className="site-footer__meta">
+          {/* Auto-updated year keeps the footer from going stale. */}
           © {new Date().getFullYear()} Mane Society. All rights reserved.
         </div>
       </footer>
