@@ -4,7 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./auth.css";
 
-const AUTH_BASE = "http://127.0.0.1:5000";
+const AUTH_BASE = "https://booking-system-xrmp.onrender.com";
 const TOKEN_KEY = "ms_token";
 const EMAIL_KEY = "ms_user_email";
 

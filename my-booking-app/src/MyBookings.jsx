@@ -4,7 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./account.css";
 
-const API_ROOT = "http://127.0.0.1:5000";
+const API_ROOT = "https://booking-system-xrmp.onrender.com";
 const TOKEN_KEY = "ms_token";
 
 function buildAuthHeaders(token) {

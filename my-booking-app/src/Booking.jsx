@@ -5,7 +5,7 @@ import Footer from "./components/Footer";
 import Button from "./Button";
 import "./Booking.css";
 
-const API_ROOT = "http://127.0.0.1:5000";
+const API_ROOT = "https://booking-system-xrmp.onrender.com";
 
 // Core slot template used as a UI fallback whenever the API can't provide data.
 // These are not "real" slots—they're only shown when the backend gives us nothing.
