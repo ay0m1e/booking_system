@@ -399,7 +399,7 @@ export default function Booking() {
     setStatusMemo({ tone: "", text: "" });
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/book", {
+      const res = await fetch(`${API_ROOT}/api/book`, {
         method: "POST",
         headers: buildHeaders(freshPocket.token),
         body: JSON.stringify({
