@@ -16,6 +16,59 @@ function buildAuthHeaders(token) {
   return headers;
 }
 
+// Tiny helpers to show the appointment info in friendlier words
+function prettyDate(dateString) {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return dateString;
+
+  const dayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const dayName = dayNames[date.getUTCDay()];
+  const dayNumber = date.getUTCDate();
+  const monthName = monthNames[date.getUTCMonth()];
+  const year = date.getUTCFullYear();
+
+  return `${dayName} • ${dayNumber} ${monthName} ${year}`;
+}
+
+function prettyTime(timeString) {
+  if (!timeString) return "";
+
+  const [rawHour, rawMinute = "00"] = timeString.split(":");
+  const hour = parseInt(rawHour, 10);
+  if (Number.isNaN(hour)) return timeString;
+
+  const minutes = rawMinute.slice(0, 2).padEnd(2, "0");
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  const suffix = hour >= 12 ? "PM" : "AM";
+
+  return `${hour12}:${minutes} ${suffix}`;
+}
+
 export default function MyBookings() {
   const navigate = useNavigate();
   const [tokenPocket, setTokenPocket] = useState(() => {
@@ -210,9 +263,9 @@ export default function MyBookings() {
                 <article key={booking.id} className="booking-card">
                   <div className="booking-card__header">
                     <h2 className="booking-card__service">{booking.service}</h2>
-                    <span className="booking-card__time">
-                      {booking.date} at {booking.time}
-                    </span>
+                    <p className="booking-card__time">
+                      {prettyDate(booking.date)} • {prettyTime(booking.time)}
+                    </p>
                   </div>
 
                   {booking.notes && (
