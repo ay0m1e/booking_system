@@ -367,3 +367,12 @@
   letter-spacing: var(--tracking-wide);
   font-size: 1.125rem;
 }
+
+.swiper-pagination-bullet {
+  background: rgba(75, 85, 99, 0.35);
+  opacity: 1;
+}
+
+.swiper-pagination-bullet-active {
+  background: var(--color-primary);
+}

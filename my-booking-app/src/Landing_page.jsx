@@ -1,10 +1,25 @@
+import { useEffect, useState } from "react";
 import "./landingPage.css";
 import { Link } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/pagination";
+import { Pagination, Autoplay } from "swiper/modules";
 import Button from "./Button.jsx";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
 function LandingPage() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => setIsMobile(window.innerWidth < 768);
+    checkIsMobile();
+
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
   return (
     <div className="landing">
       <Header />
@@ -119,50 +134,109 @@ function LandingPage() {
             Our Gallery
           </h3>
 
-          <div
-            className="landing__gallery-grid"
-            data-aos="fade-up"
-            data-aos-offset="200"
-            data-aos-duration="800"
-          >
-            <img
-              src="/images/gall_1.jpeg"
-              className="landing__gallery-image"
-              data-aos="fade-up"
-            />
+          {isMobile ? (
+            <Swiper
+              modules={[Pagination, Autoplay]}
+              pagination={{ clickable: true }}
+              autoplay={{ delay: 2500, disableOnInteraction: false }}
+              loop
+            >
+              <SwiperSlide>
+                <img
+                  src="/images/gall_1.jpeg"
+                  className="landing__gallery-image"
+                  data-aos="fade-up"
+                />
+              </SwiperSlide>
 
-            <img
-              src="/images/gall_2.jpeg"
-              className="landing__gallery-image"
-              data-aos="fade-up"
-            />
+              <SwiperSlide>
+                <img
+                  src="/images/gall_2.jpeg"
+                  className="landing__gallery-image"
+                  data-aos="fade-up"
+                />
+              </SwiperSlide>
 
-            <img
-              src="/images/gall_3.jpeg"
-              className="landing__gallery-image"
-              data-aos="fade-up"
-              data-aos-delay="300"
-            />
+              <SwiperSlide>
+                <img
+                  src="/images/gall_3.jpeg"
+                  className="landing__gallery-image"
+                  data-aos="fade-up"
+                  data-aos-delay="300"
+                />
+              </SwiperSlide>
 
-            <img
-              src="/images/gall_5.jpeg"
-              className="landing__gallery-image"
-              data-aos="fade-up"
-            />
+              <SwiperSlide>
+                <img
+                  src="/images/gall_5.jpeg"
+                  className="landing__gallery-image"
+                  data-aos="fade-up"
+                />
+              </SwiperSlide>
 
-            <img
-              src="/images/gall_6.jpeg"
-              className="landing__gallery-image"
-              data-aos="fade-up"
-              data-aos-delay="150"
-            />
+              <SwiperSlide>
+                <img
+                  src="/images/gall_6.jpeg"
+                  className="landing__gallery-image"
+                  data-aos="fade-up"
+                  data-aos-delay="150"
+                />
+              </SwiperSlide>
 
-            <img
-              src="/images/gall_8.jpeg"
-              className="landing__gallery-image"
+              <SwiperSlide>
+                <img
+                  src="/images/gall_8.jpeg"
+                  className="landing__gallery-image"
+                  data-aos="fade-up"
+                />
+              </SwiperSlide>
+            </Swiper>
+          ) : (
+            <div
+              className="landing__gallery-grid"
               data-aos="fade-up"
-            />
-          </div>
+              data-aos-offset="200"
+              data-aos-duration="800"
+            >
+              <img
+                src="/images/gall_1.jpeg"
+                className="landing__gallery-image"
+                data-aos="fade-up"
+              />
+
+              <img
+                src="/images/gall_2.jpeg"
+                className="landing__gallery-image"
+                data-aos="fade-up"
+              />
+
+              <img
+                src="/images/gall_3.jpeg"
+                className="landing__gallery-image"
+                data-aos="fade-up"
+                data-aos-delay="300"
+              />
+
+              <img
+                src="/images/gall_5.jpeg"
+                className="landing__gallery-image"
+                data-aos="fade-up"
+              />
+
+              <img
+                src="/images/gall_6.jpeg"
+                className="landing__gallery-image"
+                data-aos="fade-up"
+                data-aos-delay="150"
+              />
+
+              <img
+                src="/images/gall_8.jpeg"
+                className="landing__gallery-image"
+                data-aos="fade-up"
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -180,39 +254,86 @@ function LandingPage() {
             What Clients Say
           </h3>
 
-          <div className="landing__testimonials-grid">
-            <div className="landing__testimonial-card" data-aos="fade-up">
-              <p className="landing__testimonial-text">
-                “Absolutely the best salon experience I've had. My stylist
-                understood exactly what I wanted and executed it perfectly.”
-              </p>
-              <h4 className="landing__testimonial-author">Olamide T.</h4>
-            </div>
-
-            <div
-              className="landing__testimonial-card"
-              data-aos="fade-up"
-              data-aos-delay="150"
+          {isMobile ? (
+            <Swiper
+              modules={[Pagination, Autoplay]}
+              pagination={{ clickable: true }}
+              autoplay={{ delay: 2500, disableOnInteraction: false }}
+              loop
             >
-              <p className="landing__testimonial-text">
-                “Elegant atmosphere, professional staff, and the attention to
-                detail is unmatched. My colour has never looked better.”
-              </p>
-              <h4 className="landing__testimonial-author">Adebola O.</h4>
-            </div>
+              <SwiperSlide>
+                <div className="landing__testimonial-card" data-aos="fade-up">
+                  <p className="landing__testimonial-text">
+                    “Absolutely the best salon experience I've had. My stylist
+                    understood exactly what I wanted and executed it perfectly.”
+                  </p>
+                  <h4 className="landing__testimonial-author">Olamide T.</h4>
+                </div>
+              </SwiperSlide>
 
-            <div
-              className="landing__testimonial-card"
-              data-aos="fade-up"
-              data-aos-delay="300"
-            >
-              <p className="landing__testimonial-text">
-                “I left feeling like a brand new person. The quality, care and
-                creativity were exceptional.”
-              </p>
-              <h4 className="landing__testimonial-author">Paula .</h4>
+              <SwiperSlide>
+                <div
+                  className="landing__testimonial-card"
+                  data-aos="fade-up"
+                  data-aos-delay="150"
+                >
+                  <p className="landing__testimonial-text">
+                    “Elegant atmosphere, professional staff, and the attention
+                    to detail is unmatched. My colour has never looked better.”
+                  </p>
+                  <h4 className="landing__testimonial-author">Adebola O.</h4>
+                </div>
+              </SwiperSlide>
+
+              <SwiperSlide>
+                <div
+                  className="landing__testimonial-card"
+                  data-aos="fade-up"
+                  data-aos-delay="300"
+                >
+                  <p className="landing__testimonial-text">
+                    “I left feeling like a brand new person. The quality, care
+                    and creativity were exceptional.”
+                  </p>
+                  <h4 className="landing__testimonial-author">Paula .</h4>
+                </div>
+              </SwiperSlide>
+            </Swiper>
+          ) : (
+            <div className="landing__testimonials-grid">
+              <div className="landing__testimonial-card" data-aos="fade-up">
+                <p className="landing__testimonial-text">
+                  “Absolutely the best salon experience I've had. My stylist
+                  understood exactly what I wanted and executed it perfectly.”
+                </p>
+                <h4 className="landing__testimonial-author">Olamide T.</h4>
+              </div>
+
+              <div
+                className="landing__testimonial-card"
+                data-aos="fade-up"
+                data-aos-delay="150"
+              >
+                <p className="landing__testimonial-text">
+                  “Elegant atmosphere, professional staff, and the attention to
+                  detail is unmatched. My colour has never looked better.”
+                </p>
+                <h4 className="landing__testimonial-author">Adebola O.</h4>
+              </div>
+
+              <div
+                className="landing__testimonial-card"
+                data-aos="fade-up"
+                data-aos-delay="300"
+              >
+                <p className="landing__testimonial-text">
+                  “I left feeling like a brand new person. The quality, care and
+                  creativity were exceptional.”
+                </p>
+                <h4 className="landing__testimonial-author">Paula .</h4>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
