@@ -3,9 +3,11 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from functools import wraps
 import os
+import re
 import datetime
 import jwt
 import bcrypt
+import psycopg2
 
 
 from db import get_db
@@ -33,16 +35,37 @@ CORS (app)
 # JWT secret comes from .env so I never leak it into git.
 JWT_SECRET = os.getenv("JWT_SECRET")
 
+ALLOWED_EMAIL_DOMAINS = {
+    "gmail.com",
+    "outlook.com",
+    "hotmail.com",
+    "live.com",
+    "yahoo.com",
+    "ymail.com",
+    "icloud.com",
+    "me.com",
+    "mac.com",
+}
+
 
 # Simple helper that wraps jwt.encode so I don't repeat expiry logic.
-def create_token(user_id):
+def create_token(user_id, is_admin=False) :
     payload = {
         "user_id" : user_id,
+        "is_admin" : is_admin,
         "exp" : datetime.datetime.utcnow() + datetime.timedelta(days=7)
     }
         
     token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
     return token
+
+
+def is_valid_email(email: str) -> bool:
+    # Basic RFC 5322-ish pattern to reject obviously bad addresses.
+    if not re.fullmatch(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", email):
+        return False
+    domain = email.split("@", 1)[1]
+    return domain in ALLOWED_EMAIL_DOMAINS
 
 
 # Decorator that checks the Bearer header before hitting protected routes.
@@ -89,6 +112,9 @@ def register_user():
     if not name or not email or not password:
         return jsonify({"error": "Missing name, email or password"}), 400
     
+    if not is_valid_email(email):
+        return jsonify({"error": "Invalid or unsupported email domain"}), 400
+    
     password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode()
     
     #start connection with data base
@@ -107,10 +133,12 @@ def register_user():
         
         user_id = cur.fetchone()["id"]
         connection.commit()
-    except Exception as e:
-        # if email already exists or DB issue pops up, I make sure to rollback.
+    except psycopg2.errors.UniqueViolation:
         connection.rollback()
-        return jsonify({"error": "Email already registered"})
+        return jsonify({"error": "Email already registered"}), 409
+    except Exception:
+        connection.rollback()
+        return jsonify({"error": "Could not register user"}), 500
     finally:
         connection.close()
         
@@ -143,7 +171,7 @@ def login_user():
     cur = connection.cursor()
 
     cur.execute("""
-                SELECT id, name, email, password_hash
+                SELECT id, name, email, password_hash, is_admin
                 FROM users
                 WHERE email = %s
                 """, (email,))
@@ -164,14 +192,15 @@ def login_user():
     if not correct_password:
         return jsonify({"error": "Invalid email or password"})
 
-    token = create_token(user["id"])
+    token = create_token(user["id"], user["is_admin"])
 
     return jsonify({
         "token": token,
         "user": {
             "id": user["id"],
             "name": user["name"],
-            "email": user["email"]
+            "email": user["email"],
+            "is_admin": user["is_admin"]
         }
     })
 

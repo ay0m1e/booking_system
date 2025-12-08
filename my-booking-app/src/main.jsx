@@ -55,11 +55,9 @@ function AOSInitializer() {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      {/* Router-level helpers sit here so every page gets smooth scrolling + AOS. */}
       <AOSInitializer />
       <ScrollToHash />
       <Routes>
-        {/* Plain routing table keeps each page component easy to spot. */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/services" element={<Services />} />
         <Route path="/booking" element={<Booking />} />

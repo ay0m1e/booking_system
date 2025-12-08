@@ -7,6 +7,24 @@ import "./auth.css";
 const AUTH_BASE = "https://booking-system-xrmp.onrender.com";
 const TOKEN_KEY = "ms_token";
 const EMAIL_KEY = "ms_user_email";
+const ALLOWED_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "yahoo.com",
+  "ymail.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+]);
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+function isAllowedEmail(email) {
+  if (!EMAIL_REGEX.test(email)) return false;
+  const domain = email.split("@")[1];
+  return ALLOWED_EMAIL_DOMAINS.has(domain);
+}
 
 export default function Register() {
   const [namePad, setNamePad] = useState("");
@@ -43,10 +61,19 @@ export default function Register() {
       return;
     }
 
+    const sanitizedEmail = emailPad.trim().toLowerCase();
+
+    if (!isAllowedEmail(sanitizedEmail)) {
+      setStatusMemo({
+        tone: "error",
+        text:
+          "Use a supported email (gmail/outlook/hotmail/live/yahoo/ymail/icloud/me/mac).",
+      });
+      return;
+    }
+
     setSendGate({ firing: true });
     setStatusMemo({ tone: "", text: "" });
-
-    const sanitizedEmail = emailPad.trim().toLowerCase();
 
     try {
       const res = await fetch(`${AUTH_BASE}/api/register`, {
@@ -62,7 +89,16 @@ export default function Register() {
       const payload = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(payload.error || "Unable to register.");
+        const message =
+          res.status === 409
+            ? payload.error || "Email already registered. Try signing in."
+            : payload.error ||
+              "Unable to register. Check your email and try again.";
+        setStatusMemo({
+          tone: "error",
+          text: message,
+        });
+        return;
       }
 
       await autoLogin(sanitizedEmail, passPad);
@@ -119,6 +155,9 @@ export default function Register() {
                 placeholder="you@example.com"
                 autoComplete="email"
               />
+              <p className="auth-help">
+                Supported: gmail, outlook, hotmail, live, yahoo, ymail, icloud, me, mac.
+              </p>
             </div>
 
             <div className="auth-field">
