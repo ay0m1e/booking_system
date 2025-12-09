@@ -8,6 +8,7 @@ const API_ROOT = "https://booking-system-xrmp.onrender.com";
 const TOKEN_KEY = "ms_token";
 
 function buildAuthHeaders(token) {
+  // Some requests historically used both spellings, so we keep both.
   const headers = {};
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -70,6 +71,7 @@ function prettyTime(timeString) {
 }
 
 function isPastBooking(dateString, timeString) {
+  // Combine the date and time strings into a timestamp to compare to "now".
   if (!dateString || !timeString) return false;
   const cleanTime =
     timeString.length === 5 && timeString.includes(":")
@@ -85,17 +87,21 @@ function isPastBooking(dateString, timeString) {
 export default function MyBookings() {
   const navigate = useNavigate();
   const [tokenPocket, setTokenPocket] = useState(() => {
+    // Hydrate auth from storage so the page survives refreshes.
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(TOKEN_KEY) || "";
   });
 
   const [bookingStack, setBookingStack] = useState([]);
+  // sendGate tracks loading and which booking (if any) is being cancelled.
   const [sendGate, setSendGate] = useState({ probing: false, canceling: "" });
+  // statusMemo feeds the inline status banner.
   const [statusMemo, setStatusMemo] = useState({ tone: "", text: "" });
   const [viewStage, setViewStage] = useState("idle"); // idle | loading | empty | ready | error
 
   useEffect(() => {
     if (!tokenPocket) {
+      // Short-circuit when there is no auth token.
       setStatusMemo({
         tone: "error",
         text: "Please sign in to see your bookings.",
@@ -105,6 +111,7 @@ export default function MyBookings() {
     }
 
     async function fetchBookings() {
+      // Pull the latest bookings for this user.
       setSendGate((prev) => ({ ...prev, probing: true }));
       setStatusMemo({ tone: "", text: "" });
       setViewStage("loading");
@@ -156,6 +163,7 @@ export default function MyBookings() {
       return;
     }
 
+    // Basic confirmation guard before issuing the DELETE request.
     const approve =
       typeof window !== "undefined"
         ? window.confirm("Cancel this booking?")
@@ -202,6 +210,7 @@ export default function MyBookings() {
   }
 
   useEffect(() => {
+    // Listen for storage changes so multi-tab updates stay in sync.
     function syncToken() {
       setTokenPocket(window.localStorage.getItem(TOKEN_KEY) || "");
     }
@@ -211,10 +220,12 @@ export default function MyBookings() {
   }, []);
 
   function handleAuthRedirect() {
+    // Helper for the inline "login" link shown when unauthenticated.
     navigate("/login");
   }
 
   const { upcomingBookings, pastBookings } = useMemo(() => {
+    // Normalize bookings into two buckets so the render can stay simple.
     const upcoming = [];
     const past = [];
     bookingStack.forEach((booking) => {

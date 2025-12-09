@@ -1,7 +1,7 @@
 import LandingPage from "./Landing_page"
 
 function App() {
-  // I keep App super light: it's basically just handing the shell to LandingPage.
+  // App is intentionally tiny: it only mounts the main landing shell.
   return (
     <>
       {/* Everything else is handled inside LandingPage so this stays tidy. */}

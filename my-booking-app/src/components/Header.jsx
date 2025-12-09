@@ -6,7 +6,9 @@ import "./Header.css";
 const TOKEN_KEY = "ms_token"; // keep token key in one place so it's easy to update later
 
 export default function Header() {
+  // Controls the hamburger menu visibility on mobile.
   const [menuOpen, setMenuOpen] = useState(false);
+  // Cache token so nav items can switch between auth/non-auth views.
   const [tokenPocket, setTokenPocket] = useState(() => {
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(TOKEN_KEY) || "";

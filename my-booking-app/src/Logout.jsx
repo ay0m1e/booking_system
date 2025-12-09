@@ -15,9 +15,11 @@ const tokenHints = [
 
 export default function Logout() {
   const navigate = useNavigate();
+  // signGate toggles the loading copy while tokens are being cleared.
   const [signGate, setSignGate] = useState({ clearing: true });
 
   useEffect(() => {
+    // Remove any possible auth/session keys so logout is thorough.
     function wipeToken() {
       if (typeof window === "undefined") return;
       tokenHints.forEach((key) => {

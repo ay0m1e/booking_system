@@ -14,6 +14,7 @@ const emailHints = [
 ];
 
 function scoutEmailTag() {
+  // Try to recover a recognizable email from storage so the greeting feels personal.
   if (typeof window === "undefined") {
     return "";
   }
@@ -35,18 +36,21 @@ function scoutEmailTag() {
 export default function Account() {
   const navigate = useNavigate();
   const [tokenPocket, setTokenPocket] = useState(() => {
+    // Seed auth token from localStorage so refreshes keep session alive.
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(TOKEN_KEY) || "";
   });
   const [identityTag, setIdentityTag] = useState(() => scoutEmailTag());
 
   useEffect(() => {
+    // If no token is found, redirect back to login right away.
     if (!tokenPocket) {
       navigate("/login", { replace: true });
     }
   }, [tokenPocket, navigate]);
 
   useEffect(() => {
+    // Keep token + email in sync across tabs/windows.
     function syncIdentity() {
       setTokenPocket(window.localStorage.getItem(TOKEN_KEY) || "");
       setIdentityTag(scoutEmailTag());

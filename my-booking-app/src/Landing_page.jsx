@@ -13,6 +13,7 @@ function LandingPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Track screen width so we can swap between grid and swiper on the gallery.
     const checkIsMobile = () => setIsMobile(window.innerWidth < 768);
     checkIsMobile();
 

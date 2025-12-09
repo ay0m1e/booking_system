@@ -123,8 +123,22 @@ def admin_get_all_bookings():
     
     connection.close()
     return jsonify({"bookings": bookings}), 200
+
+
+@app.delete("/api/bookings/<int:booking_id>")
+@require_admin
+def admin_delete_booking(booking_id):
+    connection = get_db()
+    cur = connection.cursor()
     
     
+    try:
+        cur.execute("""
+                    SELECT id
+                    FROM bookings
+                    WHERE id = %s;
+                    """, (booking_id))
+        row = cur.fetchone()
 
 # Decorator that checks the Bearer header before hitting protected routes.
 def require_auth(f):

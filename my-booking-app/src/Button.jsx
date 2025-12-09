@@ -8,6 +8,7 @@ export default function Button({
   className = "",
   onClick = () => {},
 }) {
+  // Simple hover flag so we can toggle CSS classes without external state.
   const [hovered, setHovered] = useState(false); // track hover for CSS transitions
 
   const buttonClasses = ["button", hovered ? "button--hovered" : "", className]

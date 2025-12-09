@@ -11,7 +11,9 @@ const EMAIL_KEY = "ms_user_email";
 export default function Login() {
   const [emailPad, setEmailPad] = useState("");
   const [passPad, setPassPad] = useState("");
+  // sendGate keeps button/UI disabled while the request is in-flight.
   const [sendGate, setSendGate] = useState({ firing: false });
+  // statusMemo centralizes success/error copy so the card can render it.
   const [statusMemo, setStatusMemo] = useState({ tone: "", text: "" });
   const navigate = useNavigate();
 
@@ -32,6 +34,7 @@ export default function Login() {
     const cleanEmail = emailPad.trim().toLowerCase();
 
     try {
+      // Authenticate against the API; all routing happens after a good token.
       const res = await fetch(`${AUTH_BASE}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,6 +51,7 @@ export default function Login() {
       }
 
       if (payload.token) {
+        // Persist session details so other pages can read them later.
         window.localStorage.setItem(TOKEN_KEY, payload.token);
         window.localStorage.setItem(EMAIL_KEY, cleanEmail);
       }

@@ -7,6 +7,7 @@ import "./auth.css";
 const AUTH_BASE = "https://booking-system-xrmp.onrender.com";
 const TOKEN_KEY = "ms_token";
 const EMAIL_KEY = "ms_user_email";
+// Keep a tight allowlist so only common providers can register for now.
 const ALLOWED_EMAIL_DOMAINS = new Set([
   "gmail.com",
   "outlook.com",
@@ -21,6 +22,7 @@ const ALLOWED_EMAIL_DOMAINS = new Set([
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 function isAllowedEmail(email) {
+  // Quick validation: format first, then allowed provider.
   if (!EMAIL_REGEX.test(email)) return false;
   const domain = email.split("@")[1];
   return ALLOWED_EMAIL_DOMAINS.has(domain);
@@ -30,11 +32,14 @@ export default function Register() {
   const [namePad, setNamePad] = useState("");
   const [emailPad, setEmailPad] = useState("");
   const [passPad, setPassPad] = useState("");
+  // sendGate prevents double-submits while the request is running.
   const [sendGate, setSendGate] = useState({ firing: false });
+  // statusMemo holds the message and styling for the alert box.
   const [statusMemo, setStatusMemo] = useState({ tone: "", text: "" });
   const navigate = useNavigate();
 
   async function autoLogin(email, password) {
+    // After a successful signup, piggy-back into login to seed the token.
     const res = await fetch(`${AUTH_BASE}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -76,6 +81,7 @@ export default function Register() {
     setStatusMemo({ tone: "", text: "" });
 
     try {
+      // Create the account via API; rely on backend to enforce the same rules.
       const res = await fetch(`${AUTH_BASE}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

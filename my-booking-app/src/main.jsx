@@ -17,7 +17,7 @@ import Logout from "./Logout";
 import "./index.css";
 
 function ScrollToHash() {
-  // This hook watches the URL hash so clicking nav links scrolls smoothly.
+  // Watch the URL hash so clicking nav links scrolls smoothly to anchors.
   const location = useLocation();
 
   useEffect(() => {
@@ -34,7 +34,7 @@ function ScrollToHash() {
 }
 
 function AOSInitializer() {
-  // I keep AOS setup here so any route change replays the fade animations.
+  // Centralize AOS setup so route changes re-run animations.
   const location = useLocation();
 
   useEffect(() => {
@@ -55,14 +55,18 @@ function AOSInitializer() {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
+      {/* Global helpers so every route gets scroll + animation behavior. */}
       <AOSInitializer />
       <ScrollToHash />
       <Routes>
+        {/* Public marketing routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/services" element={<Services />} />
+        {/* Core booking flow */}
         <Route path="/booking" element={<Booking />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        {/* Account and session management */}
         <Route path="/account" element={<Account />} />
         <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/logout" element={<Logout />} />

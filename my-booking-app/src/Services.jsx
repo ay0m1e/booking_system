@@ -5,7 +5,8 @@ import Button from "./Button";
 import "./Services.css";
 
 export default function Services() {
-  const [activeTab, setActiveTab] = useState("ladies"); // default to most popular group
+  // Track which category the user is browsing; default to our busiest segment.
+  const [activeTab, setActiveTab] = useState("ladies");
 
   // Tab labels
   const tabs = [
@@ -16,7 +17,7 @@ export default function Services() {
     { key: "other", label: "Other" },
   ];
 
-  // Services list
+  // Services list organized by category so the grid can simply map.
   const services = {
     ladies: [
       "Cut & Style",
