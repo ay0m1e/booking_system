@@ -68,6 +68,64 @@ def is_valid_email(email: str) -> bool:
     return domain in ALLOWED_EMAIL_DOMAINS
 
 
+def require_admin(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorisation", "")
+        
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error":"Missing or invalid Authorisation header"}), 401
+        
+        token = auth_header.split(" ")[1]
+        
+        try:
+            payload = jwt.decode(token, os.getenv("JWT_SECRET"), algorithms=["HS256"])
+        except Exception:
+            return jsonify({"error": "Invalid or expired token"}), 401
+        
+        
+        if not payload.get("is_admin", False):
+            return jsonify({"error":"Admin access only"}), 403
+        
+        request.user = payload
+        
+        return fn(*args, **kwargs)
+    
+    return wrapper
+
+
+@app.get("/api/admin/bookings")
+@require_admin
+def admin_get_all_bookings():
+    connection = get_db()
+    cur = connection.cursor
+    
+    try:
+        cur.execute("""
+                    SELECT
+                        b.id,
+                        b.user_id,
+                        u.name AS user_name
+                        u.email AS user_email,
+                        b.service,
+                        b.date,
+                        b.time,
+                        b.notes,
+                        b.created_at,
+                    FROM bookings b JOIN users u ON b.user_id = u.id
+                    ORDER BY b.date ASC, b.time ASC;
+                    """)
+        
+        bookings = cur.fetchall()
+    except Exception:
+        connection.close()
+        return jsonify({"error":"Failed to fetch bookings"}), 500
+    
+    connection.close()
+    return jsonify({"bookings": bookings}), 200
+    
+    
+
 # Decorator that checks the Bearer header before hitting protected routes.
 def require_auth(f):
 
@@ -353,7 +411,13 @@ def get_my_bookings(user_id):
     cur = connection.cursor()
     
     cur.execute("""
-                SELECT id, service, date, time, notes, created_at
+                SELECT id,
+                       service,
+                       date,
+                       time,
+                       notes,
+                       created_at,
+                       (date < CURRENT_DATE OR (date = CURRENT_DATE AND time <= CURRENT_TIME)) AS is_past
                 FROM bookings
                 WHERE user_id = %s
                 ORDER BY date ASC, time ASC;

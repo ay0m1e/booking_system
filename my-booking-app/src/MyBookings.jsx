@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -67,6 +67,19 @@ function prettyTime(timeString) {
   const suffix = hour >= 12 ? "PM" : "AM";
 
   return `${hour12}:${minutes} ${suffix}`;
+}
+
+function isPastBooking(dateString, timeString) {
+  if (!dateString || !timeString) return false;
+  const cleanTime =
+    timeString.length === 5 && timeString.includes(":")
+      ? `${timeString}:00`
+      : timeString.includes(":")
+        ? timeString
+        : `${timeString}:00`;
+  const combined = new Date(`${dateString}T${cleanTime}`);
+  if (Number.isNaN(combined.getTime())) return false;
+  return combined.getTime() < Date.now();
 }
 
 export default function MyBookings() {
@@ -201,6 +214,23 @@ export default function MyBookings() {
     navigate("/login");
   }
 
+  const { upcomingBookings, pastBookings } = useMemo(() => {
+    const upcoming = [];
+    const past = [];
+    bookingStack.forEach((booking) => {
+      const pastFlag =
+        typeof booking.is_past === "boolean"
+          ? booking.is_past
+          : isPastBooking(booking.date, booking.time);
+      if (pastFlag) {
+        past.push(booking);
+      } else {
+        upcoming.push(booking);
+      }
+    });
+    return { upcomingBookings: upcoming, pastBookings: past };
+  }, [bookingStack]);
+
   const loading = viewStage === "loading";
 
   return (
@@ -258,51 +288,105 @@ export default function MyBookings() {
           )}
 
           {viewStage === "ready" && (
-            <div className="bookings-list">
-              {bookingStack.map((booking) => (
-                <article key={booking.id} className="booking-card">
-                  <div className="booking-card__header">
-                    <h2 className="booking-card__service">{booking.service}</h2>
-                    <p className="booking-card__time">
-                      {prettyDate(booking.date)} • {prettyTime(booking.time)}
-                    </p>
+            <>
+              <div className="bookings-list">
+                <h2 className="bookings-subheading">Upcoming</h2>
+                {upcomingBookings.length === 0 ? (
+                  <div className="bookings-placeholder bookings-placeholder--inline">
+                    No upcoming bookings.
                   </div>
+                ) : (
+                  upcomingBookings.map((booking) => (
+                    <article key={booking.id} className="booking-card">
+                      <div className="booking-card__header">
+                        <h2 className="booking-card__service">
+                          {booking.service}
+                        </h2>
+                        <p className="booking-card__time">
+                          {prettyDate(booking.date)} • {prettyTime(booking.time)}
+                        </p>
+                      </div>
 
-                  {booking.notes && (
-                    <p className="booking-card__notes">{booking.notes}</p>
-                  )}
+                      {booking.notes && (
+                        <p className="booking-card__notes">{booking.notes}</p>
+                      )}
 
-                  <div className="booking-card__meta">
-                    <span>
-                      Created:{" "}
-                      {booking.created_at
-                        ? new Date(booking.created_at).toLocaleString()
-                        : "—"}
-                    </span>
-                  </div>
+                      <div className="booking-card__meta">
+                        <span>
+                          Created:{" "}
+                          {booking.created_at
+                            ? new Date(booking.created_at).toLocaleString()
+                            : "—"}
+                        </span>
+                      </div>
 
-                  <div className="booking-card__actions">
-                    <button
-                      className="booking-card__cancel"
-                      onClick={() => confirmCancel(booking.id)}
-                      disabled={sendGate.canceling === booking.id}
-                    >
-                      {sendGate.canceling === booking.id
-                        ? "Cancelling..."
-                        : "Cancel"}
-                    </button>
-                    <Link
-                      to={`/booking?service=${encodeURIComponent(
-                        booking.service || ""
-                      )}`}
-                      className="booking-card__rebook"
-                    >
-                      Book again
-                    </Link>
-                  </div>
-                </article>
-              ))}
-            </div>
+                      <div className="booking-card__actions">
+                        <button
+                          className="booking-card__cancel"
+                          onClick={() => confirmCancel(booking.id)}
+                          disabled={sendGate.canceling === booking.id}
+                        >
+                          {sendGate.canceling === booking.id
+                            ? "Cancelling..."
+                            : "Cancel"}
+                        </button>
+                        <Link
+                          to={`/booking?service=${encodeURIComponent(
+                            booking.service || ""
+                          )}`}
+                          className="booking-card__rebook"
+                        >
+                          Book again
+                        </Link>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+
+              {pastBookings.length > 0 && (
+                <div className="bookings-list bookings-list--secondary">
+                  <h2 className="bookings-subheading">Past bookings</h2>
+                  {pastBookings.map((booking) => (
+                    <article key={booking.id} className="booking-card booking-card--past">
+                      <div className="booking-card__header">
+                        <h2 className="booking-card__service">
+                          {booking.service}
+                        </h2>
+                        <p className="booking-card__time">
+                          {prettyDate(booking.date)} • {prettyTime(booking.time)}
+                        </p>
+                      </div>
+
+                      {booking.notes && (
+                        <p className="booking-card__notes">{booking.notes}</p>
+                      )}
+
+                      <div className="booking-card__meta">
+                        <span>
+                          Created:{" "}
+                          {booking.created_at
+                            ? new Date(booking.created_at).toLocaleString()
+                            : "—"}
+                        </span>
+                      </div>
+
+                      <div className="booking-card__actions">
+                        <span className="booking-card__chip">Past booking</span>
+                        <Link
+                          to={`/booking?service=${encodeURIComponent(
+                            booking.service || ""
+                          )}`}
+                          className="booking-card__rebook"
+                        >
+                          Book again
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
