@@ -417,7 +417,10 @@ def get_my_bookings(user_id):
                        time,
                        notes,
                        created_at,
-                       (date < CURRENT_DATE OR (date = CURRENT_DATE AND time <= CURRENT_TIME)) AS is_past
+                       (
+                           date < CURRENT_DATE
+                           OR (date = CURRENT_DATE AND time::time <= CURRENT_TIME)
+                       ) AS is_past
                 FROM bookings
                 WHERE user_id = %s
                 ORDER BY date ASC, time ASC;
