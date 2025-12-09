@@ -21,31 +21,6 @@ const ALL_TIMES = [
   "17:00",
 ];
 
-// Basic duration table (minutes)
-const SERVICE_DURATIONS = {
-  "Cut & Style": 60,
-  "Silk Press": 120,
-  Colour: 90,
-  Highlights: 150,
-  Balayage: 180,
-  Braids: 180,
-  Extensions: 150,
-  Treatments: 60,
-  Fade: 45,
-  "Clipper Cut": 45,
-  "Beard Grooming": 30,
-  Colouring: 60,
-  "Hot Towel Shave": 45,
-  "Line-Up": 30,
-  "Boys Haircut": 45,
-  "Girls Haircut": 45,
-  "Protective Styles": 120,
-  "Wash & Blow Dry": 45,
-  "Hair Spa": 60,
-  "Wedding / Bridal Styling": 180,
-  "Special Event Styling": 120,
-};
-
 // Possible storage keys where a token might live (I search these first).
 // Having this list lets me preserve funky naming without hardcoding one key.
 const tokenKeyHints = [
@@ -217,12 +192,13 @@ export default function Booking() {
   const navigate = useNavigate();
 
   // Get service from ?service=... or fallback
-  const initialService = searchParams.get("service") || "Cut & Style";
+  const initialService = searchParams.get("service") || "";
 
-  const allServices = Object.keys(SERVICE_DURATIONS);
-  const svcBucket = allServices.includes(initialService)
-    ? allServices
-    : [initialService, ...allServices];
+  // Live services pulled from backend
+  const [services, setServices] = useState([]);
+  const [durationMap, setDurationMap] = useState({});
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [servicesStatus, setServicesStatus] = useState({ tone: "", text: "" });
   // Booking form state: these track all user inputs and what they selected.
   // svcPick/dtPick drive the availability fetch, chronTag marks the chosen slot,
   // notePad holds stylist notes that are sent via POST.
@@ -239,7 +215,66 @@ export default function Booking() {
   const [statusMemo, setStatusMemo] = useState({ tone: "", text: "" });
   const [slotPulse, setSlotPulse] = useState(0);
 
-  const durationMinutes = SERVICE_DURATIONS[svcPick] || 60; // Displayed near the service field
+  const durationMinutes = durationMap[svcPick] || "";
+
+  // Load available services from backend so durations/names stay in sync.
+  useEffect(() => {
+    let keepRunning = true;
+    async function loadServices() {
+      setServicesLoading(true);
+      setServicesStatus({ tone: "", text: "" });
+      try {
+        const res = await fetch(`${API_ROOT}/api/services`);
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(payload.error || "Unable to load services.");
+        }
+        const list = Array.isArray(payload)
+          ? payload
+          : payload.services || [];
+        if (!keepRunning) return;
+        setServices(list);
+        const durationMapNext = list.reduce((acc, item) => {
+          if (item?.name) acc[item.name] = item.duration;
+          return acc;
+        }, {});
+        setDurationMap(durationMapNext);
+        if (!svcPick) {
+          const preferred =
+            list.find(
+              (svc) =>
+                svc.name.toLowerCase() === initialService.toLowerCase()
+            ) || list[0];
+          if (preferred?.name) {
+            setSvcPick(preferred.name);
+          }
+        }
+      } catch (error) {
+        if (!keepRunning) return;
+        setServicesStatus({
+          tone: "error",
+          text: error.message || "Failed to fetch services.",
+        });
+      } finally {
+        if (keepRunning) setServicesLoading(false);
+      }
+    }
+    loadServices();
+    return () => {
+      keepRunning = false;
+    };
+    // initialService is captured from query params; we only need it on first load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ensure selected service stays valid when list updates.
+  useEffect(() => {
+    if (!services.length) return;
+    const names = services.map((svc) => svc.name);
+    if (!names.includes(svcPick)) {
+      setSvcPick(names[0]);
+    }
+  }, [services, svcPick]);
 
   // Whenever service/date change I clear the chosen time so users can't book a stale slot.
   useEffect(() => {
@@ -263,6 +298,7 @@ export default function Booking() {
   //   3. Normalizing the server payload
   //   4. Falling back only when the response is empty/malformed
   useEffect(() => {
+    if (!svcPick || servicesLoading) return;
     let keepRunning = true;
 
     async function loadSlots() {
@@ -378,6 +414,14 @@ export default function Booking() {
     const freshPocket = scoutToken();
     setTokenPocket(freshPocket);
 
+    if (!svcPick) {
+      setStatusMemo({
+        tone: "error",
+        text: "Select a service before booking.",
+      });
+      return;
+    }
+
     if (!chronTag) {
       setStatusMemo({
         tone: "error",
@@ -465,6 +509,17 @@ export default function Booking() {
               {statusMemo.text}
             </div>
           )}
+          {servicesStatus.text && (
+            <div
+              className={`booking__alert booking__alert--${
+                servicesStatus.tone || "info"
+              }`}
+              role={servicesStatus.tone === "error" ? "alert" : "status"}
+              aria-live="polite"
+            >
+              {servicesStatus.text}
+            </div>
+          )}
 
           {/* Service + date controls: lets users pick what they want before seeing slots */}
           <div className="booking__controls">
@@ -474,16 +529,18 @@ export default function Booking() {
                 className="booking__input booking__select"
                 value={svcPick}
                 onChange={(event) => setSvcPick(event.target.value)}
-                disabled={sendGate.probing || sendGate.firing}
+                disabled={
+                  sendGate.probing || sendGate.firing || servicesLoading || !services.length
+                }
               >
-                {svcBucket.map((svc) => (
-                  <option key={svc} value={svc}>
-                    {svc}
+                {services.map((svc) => (
+                  <option key={svc.id || svc.name} value={svc.name}>
+                    {svc.name}
                   </option>
                 ))}
               </select>
               <p className="booking__helper">
-                Duration: {durationMinutes} minutes.{" "}
+                Duration: {durationMinutes || "—"} minutes.{" "}
                 <Link to="/services" className="booking__helper-link">
                   Browse all services
                 </Link>

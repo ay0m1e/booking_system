@@ -638,6 +638,38 @@ def get_availability():
         "date": date_string,
         "slots": slots
     })
+
+
+@app.get("/api/services")
+def list_services():
+    connection = get_db()
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            """
+            SELECT id, name, price, duration, category, is_active
+            FROM services
+            WHERE is_active = TRUE
+            ORDER BY category ASC, name ASC;
+            """
+        )
+        rows = cur.fetchall()
+        services = []
+        for row in rows:
+            services.append({
+                "id": row.get("id"),
+                "name": row.get("name"),
+                "price": str(row.get("price")) if row.get("price") is not None else None,
+                "duration": row.get("duration"),
+                "category": row.get("category") or "",
+                "is_active": row.get("is_active", True),
+            })
+        return jsonify({"services": services})
+    except Exception:
+        connection.rollback()
+        return jsonify({"error": "Failed to load services"}), 500
+    finally:
+        connection.close()
     
     
     
