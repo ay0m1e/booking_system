@@ -150,7 +150,7 @@ def admin_get_all_bookings():
     return jsonify({"bookings": bookings}), 200
 
 
-@app.delete("/api/bookings/<int:booking_id>")
+@app.delete("/api/admin/bookings/<int:booking_id>")
 @require_admin
 def admin_delete_booking(booking_id):
     connection = get_db()
@@ -184,10 +184,190 @@ def admin_delete_booking(booking_id):
     connection.close()
     return jsonify({"success": True, 
                     "message":"Booking deleted by admin"}), 200
+    
+    
+    
+@app.get("/api/admin/services")
+@require_admin
+def admin_get_services():
+    
+    connection = get_db()
+    cur = connection.cursor()
+    
+    
+    
+    try:
+        cur.execute("""
+                    SELECT id, name, price, duration, category, is_active
+                    FROM services
+                    ORDER BY id ASC;
+                    """)
+        
+        services = cur.fetchall()
+        
+        
+        
+    except Exception:
+        connection.close()
+        return jsonify({"error":"Unable to fetch services"}), 500
+    
+    
+    connection.close()
+    return jsonify({"services": services}), 200
 
+@app.post("/api/admin/services")
+@require_admin
+def admin_create_service():
+    data = request.get_json()
+    
+    name = data.get("name")
+    price = data.get("price")
+    duration = data.get("duration")
+    category = data.get("category", None)
+    
+    if not name or price is None or duration is None:
+        return jsonify({"error":"Missing required fields"}), 400
+    
+    connection = get_db()
+    cur = connection.cursor()
+    
+    try:
+        cur.execute ("""
+                     INSERT INTO services (name, price, duration, category)
+                     VALUES (%s, %s, %s, %s)
+                     RETURNING id, name, price, duration, category, is_active; 
+                     """, (name, price, duration, category))
+        
+        new_service = cur.fetchone()
+        connection.commit()
+        
+    except Exception:
+        connection.rollback()
+        connection.close()
+        return jsonify({"error":"Failed to create service"}), 500
+    
+    
+    connection.close()
+    return jsonify({"service": new_service}), 201
+
+
+@app.put("/api/admin/services/<int:service_id>")
+@require_admin
+def admin_update_service(service_id):
+    
+    
+    data = request.get_json()
+    
+    name = data.get("name")
+    price = data.get("price")
+    duration = data.get("duration")
+    category = data.get("category")
+    is_active = data.get("is_active")
+    
+    
+    if not any([name, price is not None, duration is not None, category, is_active is not None]):
+        return jsonify({"error":"No fields to update"}), 400
+    
+    updates = []
+    values =  []
+    
+    if name is not None:
+        updates.append("name = %s")
+        values.append(name)
+        
+    if price is not None:
+        updates.append("price = %s")
+        values.append(price)
+        
+    if duration is not None:
+        updates.append("duration = %s")
+        values.append(duration)
+        
+    if category is not None:
+        updates.append("category = %s")
+        values.append(category)
+        
+    if is_active is not None:
+        updates.append("is_active = %s")
+        values.append(is_active)
+    
+    values.append(service_id)
+    
+    
+    query = f"""
+        UPDATE services
+        SET {", ".join(updates)}
+        WHERE id = %s
+        RETURNING id, name, price, duration, category, is_active;
+    """
+
+    
+    connection = get_db()
+    cur = connection.cursor()
+    
+    
+    try:
+        cur.execute (query, tuple(values))
+        updated_service = cur.fetchone()
+        
+        if updated_service is None:
+            connection.close()
+            return jsonify({"error":"Service not found"}), 404
+        
+        
+        connection.commit()
+        
+    except Exception:
+        connection.rollback()
+        connection.close()
+        return jsonify({"error":"Unable to update service"}), 500
+    
+    connection.close()
+    return jsonify({"service": updated_service}), 200
+
+
+@app.delete("/api/admin/services/<int:service_id>")
+@require_admin
+def admin_delete_service(service_id):
+    
+    connection = get_db()
+    cur = connection.cursor()
+    
+    
+    try:
+        cur.execute("""
+                    SELECT id FROM services WHERE id = %s;
+                    """, (service_id,))
+        
+        row = cur.fetchone()
+        
+        if row is None:
+            connection.close()
+            return jsonify({"error":"Service not found"}), 404
+        
+        
+        cur.execute("""
+                    UPDATE services
+                    SET is_active = FALSE
+                    WHERE id = %s
+                    RETURNING id, name, price, duration, category, is_active;
+                    """, (service_id,))
+        
+        updated = cur.fetchone()
+        connection.commit()
+        
+    except Exception:
+        connection.rollback()
+        connection.close()
+        return jsonify({"error":"Failed to delete service"}), 500
+    
+    
+    connection.close()
+    return ({"service": updated})
+    
+    
 # Decorator that checks the Bearer header before hitting protected routes.
 def require_auth(f):
-
     @wraps(f)
     def wrapper(*args, **kwargs):
         auth_header = request.headers.get("Authorisation", "")
