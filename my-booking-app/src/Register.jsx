@@ -51,7 +51,10 @@ export default function Register() {
     }
     if (payload.token) {
       window.localStorage.setItem(TOKEN_KEY, payload.token);
+      window.localStorage.setItem("token", payload.token); // mirror new key
       window.localStorage.setItem(EMAIL_KEY, email);
+      const adminFlag = payload.user?.is_admin ?? payload.is_admin ?? false;
+      window.localStorage.setItem("is_admin", String(Boolean(adminFlag)));
     }
   }
 

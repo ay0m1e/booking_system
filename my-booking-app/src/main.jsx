@@ -13,6 +13,9 @@ import Register from "./Register";
 import Account from "./Account";
 import MyBookings from "./MyBookings";
 import Logout from "./Logout";
+import AdminServicesList from "./AdminServicesList";
+import AdminCreateService from "./AdminCreateService";
+import AdminEditService from "./AdminEditService";
 
 import "./index.css";
 
@@ -70,6 +73,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/account" element={<Account />} />
         <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/logout" element={<Logout />} />
+        {/* Admin area */}
+        <Route path="/admin/services" element={<AdminServicesList />} />
+        <Route path="/admin/services/new" element={<AdminCreateService />} />
+        <Route path="/admin/services/:id/edit" element={<AdminEditService />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

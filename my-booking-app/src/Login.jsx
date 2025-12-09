@@ -53,7 +53,12 @@ export default function Login() {
       if (payload.token) {
         // Persist session details so other pages can read them later.
         window.localStorage.setItem(TOKEN_KEY, payload.token);
+        window.localStorage.setItem("token", payload.token); // mirror new key
         window.localStorage.setItem(EMAIL_KEY, cleanEmail);
+        // Capture admin flag for gated navigation.
+        const adminFlag =
+          payload.user?.is_admin ?? payload.is_admin ?? false;
+        window.localStorage.setItem("is_admin", String(Boolean(adminFlag)));
       }
 
       setStatusMemo({

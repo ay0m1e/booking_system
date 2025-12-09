@@ -3,7 +3,8 @@ import Button from "../Button";
 import { Link } from "react-router-dom";
 import "./Header.css";
 
-const TOKEN_KEY = "ms_token"; // keep token key in one place so it's easy to update later
+const TOKEN_KEYS = ["token", "ms_token"]; // prefer new token key but keep fallback
+const ADMIN_FLAG = "is_admin";
 
 export default function Header() {
   // Controls the hamburger menu visibility on mobile.
@@ -11,13 +12,31 @@ export default function Header() {
   // Cache token so nav items can switch between auth/non-auth views.
   const [tokenPocket, setTokenPocket] = useState(() => {
     if (typeof window === "undefined") return "";
-    return window.localStorage.getItem(TOKEN_KEY) || "";
+    for (const key of TOKEN_KEYS) {
+      const val = window.localStorage.getItem(key);
+      if (val) return val;
+    }
+    return "";
+  });
+  const [adminFlag, setAdminFlag] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(ADMIN_FLAG) === "true";
   });
 
   useEffect(() => {
     // sync local token into state so nav reflects login/logout instantly
     function syncToken() {
-      setTokenPocket(window.localStorage.getItem(TOKEN_KEY) || "");
+      if (typeof window === "undefined") return;
+      let found = "";
+      for (const key of TOKEN_KEYS) {
+        const val = window.localStorage.getItem(key);
+        if (val) {
+          found = val;
+          break;
+        }
+      }
+      setTokenPocket(found);
+      setAdminFlag(window.localStorage.getItem(ADMIN_FLAG) === "true");
     }
 
     window.addEventListener("storage", syncToken);
@@ -29,6 +48,7 @@ export default function Header() {
   }, []);
 
   const loggedIn = Boolean(tokenPocket); // convenience flag for nav toggles
+  const isAdmin = adminFlag === true;
 
   return (
     <>
@@ -63,6 +83,11 @@ export default function Header() {
           >
             Reviews
           </Link>
+          {isAdmin && (
+            <Link to="/admin/services" className="header__link">
+              Admin Panel
+            </Link>
+          )}
 
           {loggedIn ? (
             <>
@@ -112,6 +137,15 @@ export default function Header() {
           <a href="#testimonials" className="header__mobile-link">
             Reviews
           </a>
+          {isAdmin && (
+            <Link
+              to="/admin/services"
+              className="header__mobile-link"
+              onClick={() => setMenuOpen(false)}
+            >
+              Admin Panel
+            </Link>
+          )}
           {loggedIn ? (
             <>
               <Link

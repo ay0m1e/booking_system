@@ -4,6 +4,7 @@ import "./account.css";
 
 const tokenHints = [
   "ms_token",
+  "token",
   "ms_user_email",
   "maneAuthToken",
   "maneToken",
@@ -11,6 +12,7 @@ const tokenHints = [
   "authToken",
   "jwt",
   "accessToken",
+  "is_admin",
 ];
 
 export default function Logout() {
