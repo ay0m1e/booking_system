@@ -93,6 +93,31 @@ def require_admin(fn):
     
     return wrapper
 
+@app.get("/api/admin/users")
+@require_admin
+def admin_get_users():
+    connection = get_db()
+    cur = connection.cursor()
+    
+    
+    try:
+        cur.execute("""
+                    SELECT id, name, email, created_at, is_admin
+                    FROM users
+                    ORDER BY created_at DESC;
+                    """)
+        users = cur.fetchall()
+        
+    except Exception:
+        connection.close()
+        return jsonify({"error": "Failed to fetch users"}), 500
+    
+    
+    connection.close()
+    return jsonify({"users": users}), 200
+
+
+
 
 @app.get("/api/admin/bookings")
 @require_admin
@@ -137,8 +162,28 @@ def admin_delete_booking(booking_id):
                     SELECT id
                     FROM bookings
                     WHERE id = %s;
-                    """, (booking_id))
+                    """, (booking_id,))
         row = cur.fetchone()
+        
+        if row is None:
+            connection.close()
+            return jsonify({"error": "Booking not found"}), 404
+        
+        cur.execute("""
+                    DELETE FROM bookings
+                    WHERE id = %s;
+                    """, (booking_id,))
+        
+        connection.commit()
+        
+    except Exception:
+        connection.rollback()
+        connection.close()
+        return jsonify({"error":"Failed to delete booking"}), 500
+    
+    connection.close()
+    return jsonify({"success": True, 
+                    "message":"Booking deleted by admin"}), 200
 
 # Decorator that checks the Bearer header before hitting protected routes.
 def require_auth(f):
