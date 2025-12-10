@@ -16,6 +16,8 @@ import Logout from "./Logout";
 import AdminServicesList from "./AdminServicesList";
 import AdminCreateService from "./AdminCreateService";
 import AdminEditService from "./AdminEditService";
+import AdminBookings from "./AdminBookings";
+import AdminUsers from "./AdminUsers";
 
 import "./index.css";
 
@@ -77,6 +79,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/admin/services" element={<AdminServicesList />} />
         <Route path="/admin/services/new" element={<AdminCreateService />} />
         <Route path="/admin/services/:id/edit" element={<AdminEditService />} />
+        <Route path="/admin/bookings" element={<AdminBookings />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

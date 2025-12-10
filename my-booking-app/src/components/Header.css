@@ -64,6 +64,45 @@
   margin-left: var(--space-2);
 }
 
+.header__admin {
+  position: relative;
+}
+
+.header__admin-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.header__admin-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-soft);
+  box-shadow: var(--shadow-md);
+  min-width: 180px;
+  z-index: 20;
+}
+
+.header__admin-item {
+  color: var(--color-text);
+  text-decoration: none;
+  padding: var(--space-2);
+  border-radius: var(--radius-input);
+}
+
+.header__admin-item:hover {
+  background: var(--color-surface);
+  color: var(--color-text-strong);
+}
+
 .header__toggle {
   display: block;
   font-size: 1.5rem;

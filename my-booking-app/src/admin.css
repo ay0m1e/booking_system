@@ -96,6 +96,11 @@
   margin-top: var(--space-3);
 }
 
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
 .admin-table th,
 .admin-table td {
   padding: var(--space-3);
@@ -118,6 +123,68 @@
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+  .admin-card {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .admin-actions {
+    flex-direction: column;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.9rem;
+  }
+
+  .admin-table-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .admin-table,
+  .admin-table thead,
+  .admin-table tbody,
+  .admin-table th,
+  .admin-table td,
+  .admin-table tr {
+    display: block;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table tr {
+    margin-bottom: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-soft);
+    padding: var(--space-3);
+    background: #fff;
+  }
+
+  .admin-table td {
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+  }
+
+  .admin-table td::before {
+    content: attr(data-label);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-soft);
+    margin-right: var(--space-3);
+  }
 }
 
 .admin-form {

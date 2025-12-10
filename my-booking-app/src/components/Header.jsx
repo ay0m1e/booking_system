@@ -9,6 +9,7 @@ const ADMIN_FLAG = "is_admin";
 export default function Header() {
   // Controls the hamburger menu visibility on mobile.
   const [menuOpen, setMenuOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   // Cache token so nav items can switch between auth/non-auth views.
   const [tokenPocket, setTokenPocket] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -84,9 +85,28 @@ export default function Header() {
             Reviews
           </Link>
           {isAdmin && (
-            <Link to="/admin/services" className="header__link">
-              Admin Panel
-            </Link>
+            <div className="header__admin">
+              <button
+                type="button"
+                className="header__link header__admin-toggle"
+                onClick={() => setAdminMenuOpen((open) => !open)}
+              >
+                Admin Panel ▾
+              </button>
+              {adminMenuOpen && (
+                <div className="header__admin-menu">
+                  <Link to="/admin/services" className="header__admin-item">
+                    Services
+                  </Link>
+                  <Link to="/admin/users" className="header__admin-item">
+                    Users
+                  </Link>
+                  <Link to="/admin/bookings" className="header__admin-item">
+                    Bookings
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
 
           {loggedIn ? (
@@ -117,7 +137,10 @@ export default function Header() {
 
         <button
           className="header__toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => {
+            setMenuOpen(!menuOpen);
+            setAdminMenuOpen(false);
+          }}
         >
           {menuOpen ? "✕" : "☰"}
         </button>
@@ -143,7 +166,25 @@ export default function Header() {
               className="header__mobile-link"
               onClick={() => setMenuOpen(false)}
             >
-              Admin Panel
+              Admin: Services
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              to="/admin/users"
+              className="header__mobile-link"
+              onClick={() => setMenuOpen(false)}
+            >
+              Admin: Users
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              to="/admin/bookings"
+              className="header__mobile-link"
+              onClick={() => setMenuOpen(false)}
+            >
+              Admin: Bookings
             </Link>
           )}
           {loggedIn ? (

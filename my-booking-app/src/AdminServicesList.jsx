@@ -132,54 +132,56 @@ export default function AdminServicesList() {
           ) : services.length === 0 ? (
             <div className="admin-placeholder">No services available.</div>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Price</th>
-                  <th>Duration</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {services.map((svc) => (
-                  <tr key={svc.id}>
-                    <td>{svc.id}</td>
-                    <td>{svc.name}</td>
-                    <td>{svc.price}</td>
-                    <td>{svc.duration}</td>
-                    <td>{svc.category}</td>
-                    <td>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Duration</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((svc) => (
+                    <tr key={svc.id}>
+                    <td data-label="ID">{svc.id}</td>
+                    <td data-label="Name">{svc.name}</td>
+                    <td data-label="Price">{svc.price}</td>
+                    <td data-label="Duration">{svc.duration}</td>
+                    <td data-label="Category">{svc.category}</td>
+                    <td data-label="Status">
                       {svc.is_active === false ? (
                         <span className="admin-badge">Inactive</span>
                       ) : (
                         "Active"
                       )}
                     </td>
-                    <td>
-                      <div className="admin-table-actions">
-                        <Link
-                          to={`/admin/services/${svc.id}/edit`}
-                          className="admin-button"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          type="button"
-                          className="admin-button"
-                          onClick={() => deactivateService(svc.id)}
-                        >
-                          Deactivate
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    <td data-label="Actions">
+                        <div className="admin-table-actions">
+                          <Link
+                            to={`/admin/services/${svc.id}/edit`}
+                            className="admin-button"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            type="button"
+                            className="admin-button"
+                            onClick={() => deactivateService(svc.id)}
+                          >
+                            Deactivate
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>

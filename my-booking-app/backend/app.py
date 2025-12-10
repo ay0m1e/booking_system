@@ -123,20 +123,20 @@ def admin_get_users():
 @require_admin
 def admin_get_all_bookings():
     connection = get_db()
-    cur = connection.cursor
+    cur = connection.cursor()
     
     try:
         cur.execute("""
                     SELECT
                         b.id,
                         b.user_id,
-                        u.name AS user_name
+                        u.name AS user_name,
                         u.email AS user_email,
                         b.service,
                         b.date,
                         b.time,
                         b.notes,
-                        b.created_at,
+                        b.created_at
                     FROM bookings b JOIN users u ON b.user_id = u.id
                     ORDER BY b.date ASC, b.time ASC;
                     """)
