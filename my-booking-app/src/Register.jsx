@@ -4,7 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./auth.css";
 
-const AUTH_BASE = "https://booking-system-xrmp.onrender.com";
+const AUTH_BASE = "https://bookingsystem-production-19c2.up.railway.app";
 const TOKEN_KEY = "ms_token";
 const EMAIL_KEY = "ms_user_email";
 // Keep a tight allowlist so only common providers can register for now.

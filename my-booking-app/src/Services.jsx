@@ -4,7 +4,7 @@ import Footer from "./components/Footer";
 import Button from "./Button";
 import "./Services.css";
 
-const API_ROOT = "https://booking-system-xrmp.onrender.com";
+const API_ROOT = "https://bookingsystem-production-19c2.up.railway.app";
 
 export default function Services() {
   // Pull services from backend so the site reflects live data.

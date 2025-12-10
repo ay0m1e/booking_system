@@ -4,7 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./admin.css";
 
-const API_ROOT = "https://booking-system-xrmp.onrender.com";
+const API_ROOT = "https://bookingsystem-production-19c2.up.railway.app";
 const TOKEN_KEYS = ["token", "ms_token"];
 const ADMIN_FLAG = "is_admin";
 
