@@ -462,7 +462,7 @@ def login_user():
     password = data.get("password", "")
 
     if not email or not password:
-        return jsonify({"error": "Missing email or password"})
+        return jsonify({"error": "Missing email or password"}), 400
 
     connection = get_db()
     cur = connection.cursor()
@@ -487,7 +487,7 @@ def login_user():
     )
 
     if not correct_password:
-        return jsonify({"error": "Invalid email or password"})
+        return jsonify({"error": "Invalid email or password"}), 401
 
     token = create_token(user["id"], user["is_admin"])
 
