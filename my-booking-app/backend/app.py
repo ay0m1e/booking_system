@@ -169,6 +169,13 @@ def admin_delete_booking(booking_id):
             connection.close()
             return jsonify({"error": "Booking not found"}), 404
         
+        booking_datetime = datetime.datetime.combine(row["date"], datetime.time.fromisoformat(row["time"]))
+        now = datetime.datetime.now()
+        
+        if booking_datetime < now:
+            connection.close()
+            return jsonify({"error":"Cannot delete past bookings"}),400
+        
         cur.execute("""
                     DELETE FROM bookings
                     WHERE id = %s;

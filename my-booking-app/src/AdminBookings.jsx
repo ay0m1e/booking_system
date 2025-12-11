@@ -141,6 +141,9 @@ export default function AdminBookings() {
                   {bookings.map((bk) => {
                     const userName = bk.user_name || bk.name || "—";
                     const userEmail = bk.user_email || bk.email || "—";
+                    const bookingDateTime = new Date(`${bk.date}T${bk.time}`);
+                    const now = new Date();
+                    const isPast = bookingDateTime < now;
                     return (
                       <tr key={bk.id}>
                         <td data-label="ID">{bk.id}</td>
@@ -157,14 +160,16 @@ export default function AdminBookings() {
                         </td>
                         <td data-label="Actions">
                           <div className="admin-table-actions">
-                            <button
-                              type="button"
-                              className="admin-button"
-                              onClick={() => deleteBooking(bk.id)}
-                              disabled={deleting === bk.id}
-                            >
-                              {deleting === bk.id ? "Deleting..." : "Delete"}
-                            </button>
+                            {!isPast && (
+                              <button
+                                type="button"
+                                className="admin-button"
+                                onClick={() => deleteBooking(bk.id)}
+                                disabled={deleting === bk.id}
+                              >
+                                {deleting === bk.id ? "Deleting..." : "Delete"}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
