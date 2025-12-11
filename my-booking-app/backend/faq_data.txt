@@ -1,0 +1,11 @@
+Q: What are your opening hours?
+A: We are open Monday to Saturday, 9am to 6pm.
+
+Q: Do you accept walk-in customers?
+A: Yes, but bookings get priority.
+
+Q: How do I cancel a booking?
+A: You can cancel via the My Bookings page up to 24 hours before.
+
+Q: Do you offer children’s haircuts?
+A: Yes, see the Kids category in our services list.

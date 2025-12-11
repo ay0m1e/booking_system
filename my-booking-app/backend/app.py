@@ -8,6 +8,8 @@ import datetime
 import jwt
 import bcrypt
 import psycopg2
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
 
 from db import get_db
@@ -46,6 +48,62 @@ ALLOWED_EMAIL_DOMAINS = {
     "me.com",
     "mac.com",
 }
+
+faq_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+
+FAQ_PATH = "faq_data.txt"
+
+
+def load_faq_items():
+    faq_pairs = []
+    with open(FAQ_PATH, "r") as f:
+        content = f.read()
+        
+        
+        
+    blocks = content.strip().split("\n\n")
+    
+    for block in blocks:
+        lines = block.split("\n")
+        if len(lines) >= 2:
+            q = lines[0].replace("Q: ", "")
+            a = lines[0].replace("A: ", "")
+            faq_pairs.append((q, a))
+    return faq_pairs
+
+faq_items = load_faq_items()
+faq_questions = [q for q, _ in faq_items]
+
+
+faq_embeddings = faq_model.encode(faq_questions)
+faq_embeddings = np.array(faq_embeddings)
+
+def find_best_faq_match(user_query):
+    query_embedding = faq_model.encode([user_query])[0]
+    
+    similarities = np.dot(faq_embeddings, query_embedding) / (np.linalg.norm(faq_embeddings, axis=1) * np.linalg.norm(query_embedding))
+    
+    best_idx = int (np.argmax(similarities))
+    
+    return faq_items[best_idx]
+
+
+
+@app.post("/api/faq")
+def faq_query():
+    data = request.get_json()
+    query = data.get("query", "")
+    
+    if not query:
+        return jsonify({"error":"No query provided"}), 400
+    
+    best_q, best_a = find_best_faq_match(query)
+    
+    return jsonify({"question":best_q,
+                    "answer":best_a 
+                    })
+
 
 
 # Simple helper that wraps jwt.encode so I don't repeat expiry logic.

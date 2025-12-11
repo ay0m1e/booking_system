@@ -18,6 +18,7 @@ import AdminCreateService from "./AdminCreateService";
 import AdminEditService from "./AdminEditService";
 import AdminBookings from "./AdminBookings";
 import AdminUsers from "./AdminUsers";
+import FAQChat from "./FAQChat";
 
 import "./index.css";
 
@@ -81,6 +82,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/admin/services/:id/edit" element={<AdminEditService />} />
         <Route path="/admin/bookings" element={<AdminBookings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/faq" element={<FAQChat />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
