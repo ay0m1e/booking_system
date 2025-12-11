@@ -7,5 +7,6 @@ pyjwt
 python-dotenv
 gunicorn
 passlib[bcrypt]
+onnxruntime
 sentence-transformers
 numpy
