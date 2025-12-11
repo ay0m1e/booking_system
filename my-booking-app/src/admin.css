@@ -119,6 +119,12 @@
   border: 1px solid #fca5a5;
 }
 
+.admin-badge--muted {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #e5e7eb;
+}
+
 .admin-table-actions {
   display: flex;
   gap: var(--space-2);

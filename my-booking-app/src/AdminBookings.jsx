@@ -141,9 +141,21 @@ export default function AdminBookings() {
                   {bookings.map((bk) => {
                     const userName = bk.user_name || bk.name || "—";
                     const userEmail = bk.user_email || bk.email || "—";
-                    const bookingDateTime = new Date(`${bk.date}T${bk.time}`);
+                    const dateString = bk.date ? String(bk.date) : "";
+                    const parsedDate = new Date(dateString);
+                    const safeDate = Number.isNaN(parsedDate.getTime())
+                      ? dateString.slice(0, 10)
+                      : parsedDate.toISOString().slice(0, 10);
+                    const timeString = bk.time || "";
+                    const normalizedTime =
+                      timeString.length === 5 ? `${timeString}:00` : timeString;
+                    const bookingDateTime = new Date(
+                      `${safeDate}T${normalizedTime}`
+                    );
                     const now = new Date();
-                    const isPast = bookingDateTime < now;
+                    const parsedTime = bookingDateTime.getTime();
+                    const isPast =
+                      Number.isNaN(parsedTime) ? false : bookingDateTime < now;
                     return (
                       <tr key={bk.id}>
                         <td data-label="ID">{bk.id}</td>
@@ -153,19 +165,23 @@ export default function AdminBookings() {
                         <td data-label="Date">{bk.date}</td>
                         <td data-label="Time">{bk.time}</td>
                         <td data-label="Notes">{bk.notes || "—"}</td>
-                        <td data-label="Created">
-                          {bk.created_at
-                            ? new Date(bk.created_at).toLocaleString()
-                            : "—"}
-                        </td>
-                        <td data-label="Actions">
-                          <div className="admin-table-actions">
-                            {!isPast && (
-                              <button
-                                type="button"
-                                className="admin-button"
-                                onClick={() => deleteBooking(bk.id)}
-                                disabled={deleting === bk.id}
+                    <td data-label="Created">
+                      {bk.created_at
+                        ? new Date(bk.created_at).toLocaleString()
+                        : "—"}
+                    </td>
+                    <td data-label="Actions">
+                      <div className="admin-table-actions">
+                        {isPast ? (
+                          <span className="admin-badge admin-badge--muted">
+                            Past booking
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="admin-button"
+                            onClick={() => deleteBooking(bk.id)}
+                            disabled={deleting === bk.id}
                               >
                                 {deleting === bk.id ? "Deleting..." : "Delete"}
                               </button>
