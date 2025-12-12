@@ -8,7 +8,7 @@ import datetime
 import jwt
 import bcrypt
 import psycopg2
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 import numpy as np
 
 
@@ -49,7 +49,7 @@ ALLOWED_EMAIL_DOMAINS = {
     "mac.com",
 }
 
-faq_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', device ='cpu')
+faq_model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 
 FAQ_PATH = "faq_data.txt"
@@ -76,10 +76,12 @@ faq_items = load_faq_items()
 faq_questions = [q for q, _ in faq_items]
 
 
-faq_embeddings = np.asarray(faq_model.encode(faq_questions, convert_to_numpy=True))
+faq_embeddings = np.array(
+    list(faq_model.embed(faq_questions))
+)
 
 def find_best_faq_match(user_query):
-    query_embedding = faq_model.encode([user_query])[0]
+    query_embedding = list(faq_model.embed([user_query]))[0]
     
     similarities = np.dot(faq_embeddings, query_embedding) / (np.linalg.norm(faq_embeddings, axis=1) * np.linalg.norm(query_embedding))
     
