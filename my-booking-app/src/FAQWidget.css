@@ -11,6 +11,18 @@
   font-size: 0.95rem;
   box-shadow: var(--shadow-md);
   cursor: pointer;
+  position: fixed;
+}
+
+.faq-fab::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  right: 14px;
+  width: 0;
+  height: 0;
+  border-top: 10px solid var(--color-primary);
+  border-left: 10px solid transparent;
 }
 
 .faq-widget {
