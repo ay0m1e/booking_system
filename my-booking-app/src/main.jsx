@@ -19,6 +19,7 @@ import AdminEditService from "./AdminEditService";
 import AdminBookings from "./AdminBookings";
 import AdminUsers from "./AdminUsers";
 import FAQChat from "./FAQChat";
+import FAQWidget from "./FAQWidget";
 
 import "./index.css";
 
@@ -84,6 +85,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/faq" element={<FAQChat />} />
       </Routes>
+      <FAQWidget />
     </BrowserRouter>
   </React.StrictMode>
 );

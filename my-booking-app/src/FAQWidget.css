@@ -1,0 +1,117 @@
+.faq-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 60;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 18px;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+
+.faq-widget {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: 70vh;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-soft);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  z-index: 60;
+}
+
+.faq-widget__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.faq-widget__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.faq-widget__subtitle {
+  margin: 4px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+}
+
+.faq-widget__close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.faq-widget__chat {
+  flex: 1;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+  background: var(--color-surface);
+}
+
+.faq-widget__empty {
+  text-align: center;
+  color: var(--color-text-soft);
+}
+
+.faq-widget__input {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.faq-widget__input textarea {
+  flex: 1;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-input);
+  padding: var(--space-3);
+  resize: none;
+  min-height: 44px;
+}
+
+.faq-widget__input button {
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+}
+
+.faq-widget__input button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .faq-fab {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .faq-widget {
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-height: 75vh;
+  }
+}

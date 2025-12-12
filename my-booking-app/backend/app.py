@@ -49,7 +49,7 @@ ALLOWED_EMAIL_DOMAINS = {
     "mac.com",
 }
 
-faq_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+faq_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', device ='cpu')
 
 
 FAQ_PATH = "faq_data.txt"
@@ -76,8 +76,7 @@ faq_items = load_faq_items()
 faq_questions = [q for q, _ in faq_items]
 
 
-faq_embeddings = faq_model.encode(faq_questions)
-faq_embeddings = np.array(faq_embeddings)
+faq_embeddings = np.asarray(faq_model.encode(faq_questions, convert_to_numpy=True))
 
 def find_best_faq_match(user_query):
     query_embedding = faq_model.encode([user_query])[0]
