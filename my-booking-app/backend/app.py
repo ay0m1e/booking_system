@@ -68,7 +68,7 @@ def load_faq_items():
         lines = block.split("\n")
         if len(lines) >= 2:
             q = lines[0].replace("Q: ", "")
-            a = lines[0].replace("A: ", "")
+            a = "\n".join(lines[1:]).replace("A: ", "", 1)
             faq_pairs.append((q, a))
     return faq_pairs
 
