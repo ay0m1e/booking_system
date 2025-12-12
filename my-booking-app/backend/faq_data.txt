@@ -9,3 +9,33 @@ A: You can cancel via the My Bookings page up to 24 hours before.
 
 Q: Do you offer children’s haircuts?
 A: Yes, see the Kids category in our services list.
+
+Q: How much is a Cut & Style?
+A: A standard Cut & Style is £45 and usually takes about 60 minutes.
+
+Q: Do you offer hair colouring services?
+A: Yes, we offer Colour, Highlights, Balayage, and Colouring. Pricing varies; please check the services page for current rates.
+
+Q: Can I rebook the same service easily?
+A: Yes. Go to My Bookings, choose a past booking, and use the “Book again” option.
+
+Q: What is your latest appointment time?
+A: Our last appointment slot is typically 5pm for longer services and 5:30pm for shorter ones. Availability may vary by date.
+
+Q: Do I need to pay a deposit?
+A: Currently we do not require a deposit; payment is taken at the appointment.
+
+Q: Are you open on Sundays?
+A: No, we are closed on Sundays.
+
+Q: How do I contact the salon?
+A: You can reach us at hello@manesociety.com or call +44 7917 435 250.
+
+Q: Can I book for multiple people at once?
+A: Please create separate bookings for each person so we can allocate the right time and stylist.
+
+Q: What if I arrive late?
+A: Please let us know as soon as possible. We may need to shorten or reschedule if you’re more than 10 minutes late.
+
+Q: Do you offer treatments for natural hair?
+A: Yes, we have Treatments, Silk Press, Protective Styles, and other services suitable for natural hair.

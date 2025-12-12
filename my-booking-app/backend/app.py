@@ -81,14 +81,18 @@ faq_embeddings = np.array(
 )
 
 def find_best_faq_match(user_query):
-    query_embedding = list(faq_model.embed([user_query]))[0]
-    
-    similarities = np.dot(faq_embeddings, query_embedding) / (np.linalg.norm(faq_embeddings, axis=1) * np.linalg.norm(query_embedding))
-    
-    best_idx = int (np.argmax(similarities))
-    best_score = float(similarities[best_idx])
-    
-    return faq_items[best_idx]
+    try:
+        query_embedding = list(faq_model.embed([user_query]))[0]
+        similarities = np.dot(faq_embeddings, query_embedding) / (np.linalg.norm(faq_embeddings, axis=1) * np.linalg.norm(query_embedding))
+        best_idx = int (np.argmax(similarities))
+        best_score = float(similarities[best_idx])
+        return faq_items[best_idx], best_score
+    except Exception:
+        lowered = user_query.lower()
+        for idx, (q, a) in enumerate(faq_items):
+            if lowered in q.lower():
+                return (q, a), 1.0
+        return (faq_items[0] if faq_items else ("", "")), 0.0
 
 
 
@@ -104,13 +108,15 @@ def faq_query():
     
     if score < 0.45:
         return jsonify({
-            "answer":("I can help with opening hours, services, bookings, " "cancellations, and general salon questions."), 
+            "answer":("I can help with opening hours, services, bookings, cancellations, and general salon questions."), 
             "confidence": score
         })
     
-    return jsonify({"question":best_q,
-                    "answer":best_a 
-                    })
+    return jsonify({
+        "question": best_q,
+        "answer": best_a,
+        "confidence": score
+    })
 
 
 
