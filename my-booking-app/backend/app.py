@@ -100,7 +100,7 @@ def faq_query():
     if not query:
         return jsonify({"error":"No query provided"}), 400
     
-    best_q, best_a = find_best_faq_match(query), score = find_best_faq_match(query)
+    (best_q, best_a), score = find_best_faq_match(query)
     
     if score < 0.45:
         return jsonify({
