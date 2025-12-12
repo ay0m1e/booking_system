@@ -8,8 +8,7 @@ import datetime
 import jwt
 import bcrypt
 import psycopg2
-from fastembed import TextEmbedding
-import numpy as np
+from groq import Groq
 
 
 from db import get_db
@@ -49,75 +48,59 @@ ALLOWED_EMAIL_DOMAINS = {
     "mac.com",
 }
 
-faq_model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+groq_client = Groq(api_key = os.getenv("GROQ_API_KEY"))
 
 
 FAQ_PATH = "faq_data.txt"
 
 
-def load_faq_items():
-    faq_pairs = []
-    with open(FAQ_PATH, "r") as f:
-        content = f.read()
-        
-        
-        
-    blocks = content.strip().split("\n\n")
+def load_faq_text():
     
-    for block in blocks:
-        lines = block.split("\n")
-        if len(lines) >= 2:
-            q = lines[0].replace("Q: ", "")
-            a = "\n".join(lines[1:]).replace("A: ", "", 1)
-            faq_pairs.append((q, a))
-    return faq_pairs
-
-faq_items = load_faq_items()
-faq_questions = [q for q, _ in faq_items]
-
-
-faq_embeddings = np.array(
-    list(faq_model.embed(faq_questions))
-)
-
-def find_best_faq_match(user_query):
     try:
-        query_embedding = list(faq_model.embed([user_query]))[0]
-        similarities = np.dot(faq_embeddings, query_embedding) / (np.linalg.norm(faq_embeddings, axis=1) * np.linalg.norm(query_embedding))
-        best_idx = int (np.argmax(similarities))
-        best_score = float(similarities[best_idx])
-        return faq_items[best_idx], best_score
-    except Exception:
-        lowered = user_query.lower()
-        for idx, (q, a) in enumerate(faq_items):
-            if lowered in q.lower():
-                return (q, a), 1.0
-        return (faq_items[0] if faq_items else ("", "")), 0.0
-
-
+        with open(FAQ_PATH, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
 
 @app.post("/api/faq")
-def faq_query():
+def faq():
     data = request.get_json()
-    query = data.get("query", "")
+    user_question = data.get("query", "").strip()
     
-    if not query:
-        return jsonify({"error":"No query provided"}), 400
     
-    (best_q, best_a), score = find_best_faq_match(query)
+    if not user_question:
+        return jsonify({"error": "No query entered"}), 400
     
-    if score < 0.45:
-        return jsonify({
-            "answer":("I can help with opening hours, services, bookings, cancellations, and general salon questions."), 
-            "confidence": score
-        })
+    faq_context = load_faq_text()
     
-    return jsonify({
-        "question": best_q,
-        "answer": best_a,
-        "confidence": score
-    })
+    if not faq_context:
+        return jsonify({"answer":"No FAQ information is currently available"}), 200
+    
+    
+    response = groq_client.chat.completions.create(
+        model = "llama-3.1-8b-instant",
+        messages=[
+            {
+                "role": "system",
+                "content" : ("You are a helpful salon assistant. "
+                                "Answer the user's question using ONLY the FAQ information provided. "
+                                "Be friendly and concise. "
+                                "If the answer is not in the FAQ, say you are not sure and suggest contacting the salon.")
+                },
+            {
+                "role":"system",
+                "content":f"FAQ INFORMATION: \n{faq_context}"
+            },
+            {
+                "role":"user",
+                "content": user_question
+            }
+        ], temperature=0.3
+    )
 
+    answer = response.choices[0].message.content
+    
+    return jsonify({"answer": answer}), 200
 
 
 # Simple helper that wraps jwt.encode so I don't repeat expiry logic.
