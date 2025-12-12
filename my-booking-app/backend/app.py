@@ -86,6 +86,7 @@ def find_best_faq_match(user_query):
     similarities = np.dot(faq_embeddings, query_embedding) / (np.linalg.norm(faq_embeddings, axis=1) * np.linalg.norm(query_embedding))
     
     best_idx = int (np.argmax(similarities))
+    best_score = float(similarities[best_idx])
     
     return faq_items[best_idx]
 
@@ -99,7 +100,13 @@ def faq_query():
     if not query:
         return jsonify({"error":"No query provided"}), 400
     
-    best_q, best_a = find_best_faq_match(query)
+    best_q, best_a = find_best_faq_match(query), score = find_best_faq_match(query)
+    
+    if score < 0.45:
+        return jsonify({
+            "answer":("I can help with opening hours, services, bookings, " "cancellations, and general salon questions."), 
+            "confidence": score
+        })
     
     return jsonify({"question":best_q,
                     "answer":best_a 
