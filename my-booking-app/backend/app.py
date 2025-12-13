@@ -103,22 +103,6 @@ def faq():
     
     return jsonify({"answer": answer}), 200
 
-@app.post("/api/ai/booking-assistant")
-def booking_assistant():
-    data = request.get_json()
-    user_input = data.get("query", "").strip()
-    
-    if not user_input:
-        return jsonify({"error":"No query provided"}), 400
-
-    # Step 1: extract intent (service, date, time window)
-    intent = extract_booking_intent(user_input)
-    # Step 2: check availability
-    # Step 3: respond nicely    
-    
-    return jsonify({"message": "TODO"}), 200
-
-
 def extract_booking_intent(user_input):
     response = groq_client.chat.completions.create(
         model = "llama-3.1-8b-instant",
@@ -145,6 +129,24 @@ def extract_booking_intent(user_input):
     
     raw = raw.replace("```json", "").replace("```", "").strip()
     return json.loads(raw)
+
+@app.post("/api/ai/booking-assistant")
+def booking_assistant():
+    data = request.get_json()
+    user_input = data.get("query", "").strip()
+    
+    if not user_input:
+        return jsonify({"error":"No query provided"}), 400
+
+    # Step 1: extract intent (service, date, time window)
+    intent = extract_booking_intent(user_input)
+    # Step 2: check availability
+    # Step 3: respond nicely    
+    
+    return jsonify({"intent": intent}), 200
+
+
+
 
 # Simple helper that wraps jwt.encode so I don't repeat expiry logic.
 def create_token(user_id, is_admin=False) :
