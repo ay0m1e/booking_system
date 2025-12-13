@@ -125,13 +125,14 @@ def extract_booking_intent(user_input):
         messages=[
             {
                 "role": "system",
-                "content" : (
-                    "Extract booking intent from the user input.\n"
-                    "Return ONLY valid JSON with these fields:\n"
-                    "{ service, date, time_window }\n\n"
-                    "date format: YYYY-MM-DD or null\n"
-                    "time_window examples: 'after 15:00', 'between 14:00-17:00', 'morning', or null\n"
-                    "If information is missing, return null for that field.")
+                "content": (
+                    "You are a JSON generator.\n"
+                    "Return ONLY valid JSON.\n"
+                    "Use double quotes for all keys and values.\n"
+                    "Do not include comments, markdown, or extra text.\n"
+                    "The JSON schema is:\n"
+                    "{ \"service\": string | null, \"date\": string | null, \"time_window\": string | null }\n"
+                    "Date format must be YYYY-MM-DD.")
                 },
             {
                 "role":"user",
