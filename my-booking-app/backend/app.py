@@ -30,6 +30,9 @@ TIME_SLOTS = [
     "17:00"
 ]
 
+SALON_OPEN_TIME = 9   # 09:00
+SALON_CLOSE_TIME = 18  # 18:00
+
 
 app = Flask(__name__)
 CORS (app)
@@ -126,9 +129,47 @@ def extract_booking_intent(user_input):
     )
     
     raw = response.choices[0].message.content.strip()
-    
     raw = raw.replace("```json", "").replace("```", "").strip()
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {"service": None, "date": None, "time_window": None}
+
+
+def get_active_services():
+    connection = get_db()
+    cur = connection.cursor()
+    cur.execute("""
+                SELECT id, name, duration
+                FROM services
+                WHERE is_active = TRUE
+                """)
+    
+    rows = cur.fetchall()
+    connection.close()
+    
+    services = []
+    
+    for row in rows:
+        services.append({
+            "id": row["id"],
+            "name": row["name"],
+            "duration": row["duration"]
+        })
+    return services
+    
+    
+def match_service(intent_service, services):
+    if not intent_service:
+        return None
+    
+    intent_service = intent_service.lower()
+    
+    for service in services:
+        if intent_service in service["name"].lower():
+            return service
+    return None
+    
 
 @app.post("/api/ai/booking-assistant")
 def booking_assistant():
@@ -141,9 +182,20 @@ def booking_assistant():
     # Step 1: extract intent (service, date, time window)
     intent = extract_booking_intent(user_input)
     # Step 2: check availability
+    services = get_active_services()
+    matched_service = match_service(intent.get("service"), services)
+    
+    if not matched_service:
+        return jsonify({
+            "message":" Sorry, I couldn't find that service. Please choose another service from our list"
+        }), 200
+
     # Step 3: respond nicely    
     
-    return jsonify({"intent": intent}), 200
+    return jsonify({
+        "intent": intent,
+        "service": matched_service
+        }), 200
 
 
 
