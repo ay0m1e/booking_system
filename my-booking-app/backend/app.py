@@ -9,6 +9,7 @@ import jwt
 import bcrypt
 import psycopg2
 from groq import Groq
+import json
 
 
 from db import get_db
@@ -102,6 +103,47 @@ def faq():
     
     return jsonify({"answer": answer}), 200
 
+@app.post("/api/ai/booking-assistant")
+def booking_assistant():
+    data = request.get_json()
+    user_input = data.get("query", "").strip()
+    
+    if not user_input:
+        return jsonify({"error":"No query provided"}), 400
+
+    # Step 1: extract intent (service, date, time window)
+    intent = extract_booking_intent(user_input)
+    # Step 2: check availability
+    # Step 3: respond nicely    
+    
+    return jsonify({"message": "TODO"}), 200
+
+
+def extract_booking_intent(user_input):
+    response = groq_client.chat.completions.create(
+        model = "llama-3.1-8b-instant",
+        messages=[
+            {
+                "role": "system",
+                "content" : (
+                    "Extract booking intent from the user input.\n"
+                    "Return ONLY valid JSON with these fields:\n"
+                    "{ service, date, time_window }\n\n"
+                    "date format: YYYY-MM-DD or null\n"
+                    "time_window examples: 'after 15:00', 'between 14:00-17:00', 'morning', or null\n"
+                    "If information is missing, return null for that field.")
+                },
+            {
+                "role":"user",
+                "content": user_input
+            }
+        ], temperature=0
+    )
+    
+    raw = response.choices[0].message.content.strip()
+    
+    raw = raw.replace("```json", "").replace("```", "").strip()
+    return json.loads(raw)
 
 # Simple helper that wraps jwt.encode so I don't repeat expiry logic.
 def create_token(user_id, is_admin=False) :
