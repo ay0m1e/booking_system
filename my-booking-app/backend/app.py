@@ -58,7 +58,7 @@ FAQ_PATH = "faq_data.txt"
 def load_faq_text():
     
     try:
-        with open(FAQ_PATH, "r") as f:
+        with open(FAQ_PATH, "r", encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
         return ""
@@ -66,10 +66,11 @@ def load_faq_text():
 @app.post("/api/faq")
 def faq():
     data = request.get_json()
-    user_question = data.get("query", "").strip()
+    user_input = data.get("query", "").strip()
+    return faq_internal(user_input)
     
-    
-    if not user_question:
+def faq_internal(user_input):
+    if not user_input:
         return jsonify({"error": "No query entered"}), 400
     
     faq_context = load_faq_text()
@@ -94,7 +95,7 @@ def faq():
             },
             {
                 "role":"user",
-                "content": user_question
+                "content": user_input
             }
         ], temperature=0.3
     )
@@ -283,11 +284,55 @@ def format_booking_response(service, date, slots):
     
     return response.choices[0].message.content
 
+def classify_assistant_intent(user_input):
+    response = groq_client.chat.completions.create(
+        model = "llama-3.1-8b-instant",
+        messages=[
+            {
+                "role":"system",
+                "content": (
+                    "Classify the user's intent.\n"
+                    "Return ONLY one word:\n"
+                    "- faq\n"
+                    "- booking\n\n"
+                    "Use 'booking' if user is trying to book, reschedule, "
+                    "check availability, or mentions dates or times.\n"
+                    "Otherwise use 'faq'."
+                )
+            },
+            {
+                "role": "user",
+                "content": user_input
+            }
+        ], temperature=0
+    )
+    
+    return response.choices[0].message.content.strip().lower()
+
+
+@app.post("/api/assistant")
+def assistant():
+    data = request.get_json()
+    user_input = data.get("query", "").strip()
+    
+    
+    if not user_input:
+        return jsonify({"error":"No query identified"})
+    
+    intent = classify_assistant_intent(user_input)
+    
+    if intent == 'booking':
+        return booking_assistant_internal(user_input)
+    
+    return faq_internal(user_input)
+
 @app.post("/api/ai/booking-assistant")
 def booking_assistant():
     data = request.get_json()
     user_input = data.get("query", "").strip()
+    return booking_assistant_internal(user_input)
     
+def booking_assistant_internal(user_input):
     if not user_input:
         return jsonify({"error":"No query provided"}), 400
 
