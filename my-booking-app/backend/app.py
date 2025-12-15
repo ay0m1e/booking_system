@@ -30,9 +30,6 @@ TIME_SLOTS = [
     "17:00"
 ]
 
-SALON_OPEN_TIME = 9   # 09:00
-SALON_CLOSE_TIME = 18  # 18:00
-
 
 app = Flask(__name__)
 CORS (app)
@@ -170,6 +167,121 @@ def match_service(intent_service, services):
             return service
     return None
     
+def parse_hour(value):
+    value = value.strip().lower()
+    
+    if ":" in value:
+        return int(value.split(":")[0])
+    
+    if value.endswith("am") or value.endswith("pm"):
+        hour = int(value[:-2])
+        if value.endswith("pm") and hour != 12:
+            return hour + 12
+        
+        if value.endswith("am") and hour == 12:
+            return 0
+        
+        return hour
+    return int(value)
+
+def filter_time_slots(time_window):
+    if not time_window:
+        return TIME_SLOTS
+    
+    time_window = time_window.lower()
+    
+    def hour(slot):
+        return int(slot.split(":")[0])
+    
+    parts = time_window.split()
+    
+    if time_window.startswith("after"):
+        h= parse_hour(parts[1])
+        return [t for t in TIME_SLOTS if hour(t) > h]
+    
+    if time_window.startswith("before"):
+        h= parse_hour(parts[1])
+        return [t for t in TIME_SLOTS if hour(t) < h]
+    
+    if time_window.startswith("between"):
+        start, end = parts[1].split("-")
+        h1 = parse_hour(start)
+        h2 = parse_hour(end)
+        return [t for t in TIME_SLOTS if h1 <= hour(t) < h2]
+    
+    if time_window == "morning":
+        return [t for t in TIME_SLOTS if 9 <= hour(t) < 12]
+    
+    if time_window == "afternoon":
+        return [t for t in TIME_SLOTS if 12 <= hour(t) < 17]
+
+    return TIME_SLOTS
+    
+
+def get_available_slots_for_times(service, date_string, candidate_times):
+    try:
+        date_main = datetime.date.fromisoformat(date_string)
+    except ValueError:
+        return []
+    
+    connection = get_db()
+    cur = connection.cursor()
+    cur.execute("""
+                SELECT time
+                FROM bookings
+                WHERE service = %s AND date = %s;
+                """, (service, date_main)) 
+    
+    booked_slots = {row["time"] for row in cur.fetchall()}
+    connection.close()
+    
+    available = []
+    now = datetime.datetime.now()
+    
+    for slot in candidate_times:
+        # slot: "14:00"
+        slot_hour, slot_minute = map(int, slot.split(":"))
+
+        slot_dt = datetime.datetime.combine(date_main, datetime.time(slot_hour, slot_minute))
+
+        # Rule 1: slot already booked (existing logic)
+        if slot in booked_slots:
+            continue
+
+        # Rule 2: slot is in the past (same day only)
+        if date_main == now.date() and slot_dt <= now:
+            continue
+
+        # Otherwise available
+        available.append(slot)
+        
+    return available
+
+def format_booking_response(service, date, slots):
+    if not slots:
+        return f"Sorry, there are no available times for {service} on {date}."
+    
+    slots_text = ", ".join(slots[:5])
+    
+    response = groq_client.chat.completions.create(
+        model = "llama-3.1-8b-instant",
+        messages=[
+            {
+                "role": "system",
+                "content" : "You are a friendly salon booking assistant. Be concise."
+            },
+            {
+                "role":"user",
+                "content": (
+                    f"Service: {service}\n"
+                    f"Date: {date}\n"
+                    f"Available times: {slots_text}"
+                )
+            }
+        ], temperature=0.4
+    )
+    
+    return response.choices[0].message.content
 
 @app.post("/api/ai/booking-assistant")
 def booking_assistant():
@@ -189,12 +301,31 @@ def booking_assistant():
         return jsonify({
             "message":" Sorry, I couldn't find that service. Please choose another service from our list"
         }), 200
-
+        
+    date = intent.get("date")
+    if not date:
+        return jsonify({
+            "message":"Please specify a date for your booking."
+        }), 200
+        
+    candidate_times = filter_time_slots(intent.get("time_window"))
+    
+    available_slots = get_available_slots_for_times(matched_service["name"],
+                                                    date,
+                                                    candidate_times
+                                                    )
+    
+    message = format_booking_response(
+        matched_service["name"],
+        date,
+        available_slots
+    )
+    
     # Step 3: respond nicely    
     
     return jsonify({
-        "intent": intent,
-        "service": matched_service
+        "message": message,
+        "available_slots": available_slots
         }), 200
 
 
