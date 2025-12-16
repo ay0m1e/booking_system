@@ -469,12 +469,15 @@ def booking_assistant_internal(user_input, session_id=None):
         
         
     if len(slots) == 1:
+        # Keep the session_id in the response so the next user reply continues the thread.
         return jsonify({
+            "session_id": session_id,
+            "available_slots": slots,
             "message": (
-                f"Sorry, there are no available times for a {session['service']} "
-                f"on {session['date']}. Would you like to try another day?"
+                f"We have one available time for a {session['service']} on "
+                f"{session['date']}: {slots[0]}. Would you like to book it?"
             )
-        })
+        }), 200
     
     # Step 3: respond nicely    
     
