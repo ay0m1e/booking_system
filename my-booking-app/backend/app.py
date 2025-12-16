@@ -31,6 +31,9 @@ TIME_SLOTS = [
     "17:00"
 ]
 
+# Booking assistant sessions expire so stale context doesn't leak across chats.
+SESSION_TTL_MINUTES = 30
+
 ASSISTANT_SESSIONS = {}
 
 
@@ -222,6 +225,28 @@ def filter_time_slots(time_window):
     return TIME_SLOTS
     
 
+def session_is_stale(session):
+    last = session.get("updated_at")
+    if not last:
+        return False
+    age = datetime.datetime.utcnow() - last
+    return age > datetime.timedelta(minutes=SESSION_TTL_MINUTES)
+
+
+def get_session(session_id):
+    session = ASSISTANT_SESSIONS.get(session_id)
+    if not session:
+        return None
+    if session_is_stale(session):
+        ASSISTANT_SESSIONS.pop(session_id, None)
+        return None
+    return session
+
+
+def touch_session(session):
+    session["updated_at"] = datetime.datetime.utcnow()
+
+
 def get_available_slots_for_times(service, date_string, candidate_times):
     try:
         date_main = datetime.date.fromisoformat(date_string)
@@ -318,7 +343,7 @@ def handle_booking_followup(user_input, session):
     if chosen in session["available_slots"]:
         return jsonify({
             "message":(
-                f"Great! I can book your {session['service']} on"
+                f"Great! I can book your {session['service']} on "
                 f"{session['date']} at {chosen}. Please confirm to proceed."
             ),
             "confirmed_slot": chosen
@@ -344,28 +369,32 @@ def assistant():
     
     
     extracted = extract_booking_intent(user_input)
-    
+    intent_label = classify_assistant_intent(user_input)
     has_booking_signal = (
-        extracted.get("service")
+        intent_label == "booking"
+        or extracted.get("service")
         or extracted.get("date")
         or extracted.get("time_window")
         or any(word in user_input.lower() for word in [
             "book", "booking", "appointment", "schedule", "haircut"
         ])
     )
-    if session_id and session_id in ASSISTANT_SESSIONS:
-        session = ASSISTANT_SESSIONS[session_id]
-        
-        if session["intent"] == "booking":
-            # If we already offered times, treat the next reply as a slot choice.
-            if session.get("available_slots"):
-                return handle_booking_followup(user_input, session_id)
-            # Otherwise, continue the booking flow to gather missing details instead of erroring.
-            return booking_assistant_internal(user_input, session_id)
-        
+
+    session = get_session(session_id) if session_id else None
+
+    if session and session["intent"] == "booking":
+        touch_session(session)
+        # If we already offered times, treat the next reply as a slot choice.
+        if session.get("available_slots"):
+            return handle_booking_followup(user_input, session)
+        # If the user clearly isn't talking about booking, drop to FAQ without using stale booking data.
+        if not has_booking_signal:
+            return faq_internal(user_input)
+        return booking_assistant_internal(user_input, session_id)
+
     if has_booking_signal:
         return booking_assistant_internal(user_input, session_id)
-    
+
     return faq_internal(user_input)
 
 
@@ -382,8 +411,15 @@ def normalise_date(value):
     if value == "tomorrow":
         return (today +datetime.timedelta(days=1)).isoformat()
     
+    try:
+        parsed = datetime.date.fromisoformat(value)
+    except ValueError:
+        return None
     
-    return value
+    if parsed < today:
+        return None
+    
+    return parsed.isoformat()
     
 
 @app.post("/api/ai/booking-assistant")
@@ -396,7 +432,7 @@ def booking_assistant_internal(user_input, session_id=None):
     if not session_id:
         session_id = str(uuid.uuid4())
         
-    session = ASSISTANT_SESSIONS.get(session_id)
+    session = get_session(session_id)
     
     if not session:
         session = {
@@ -404,14 +440,17 @@ def booking_assistant_internal(user_input, session_id=None):
             "service": None,
             "date": None,
             "time_window": None,
-            "available_slots": []
+            "available_slots": [],
+            "updated_at": datetime.datetime.utcnow()
         }
         
         ASSISTANT_SESSIONS[session_id] = session
+    else:
+        touch_session(session)
         
     intent = extract_booking_intent(user_input)
     
-    if intent.get("service") and not session["time_window"]:
+    if intent.get("service") and not session["service"]:
         services = get_active_services()
         matched = match_service(intent["service"], services)
         
@@ -425,7 +464,13 @@ def booking_assistant_internal(user_input, session_id=None):
         
         
     if intent.get("date") and not session["date"]:
-        session["date"] = normalise_date(intent["date"])
+        normalized = normalise_date(intent["date"])
+        if not normalized:
+            return jsonify({
+                "session_id": session_id,
+                "message": "Please provide a future date in YYYY-MM-DD format."
+            }), 200
+        session["date"] = normalized
         
         
     if intent.get("time_window") and not session["time_window"]:
