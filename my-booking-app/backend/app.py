@@ -384,22 +384,27 @@ def assistant():
 
     session = get_session(session_id) if session_id else None
 
+    # When already in a booking session, accept extracted date/time/service hints even if classifier is unsure.
+    booking_reply = has_booking_signal
+    if session and session.get("intent") == "booking":
+        booking_reply = booking_reply or extracted.get("service") or extracted.get("date") or extracted.get("time_window")
+
     if session and session["intent"] == "booking":
         touch_session(session)
         # If we already offered times, treat the next reply as a slot choice.
         if session.get("available_slots"):
             # If the user is no longer talking about booking, drop the session and answer as FAQ.
-            if not has_booking_signal:
+            if not booking_reply:
                 clear_session(session_id)
                 return faq_internal(user_input)
             return handle_booking_followup(user_input, session)
         # If the user clearly isn't talking about booking, drop to FAQ without using stale booking data.
-        if not has_booking_signal:
+        if not booking_reply:
             clear_session(session_id)
             return faq_internal(user_input)
         return booking_assistant_internal(user_input, session_id)
 
-    if has_booking_signal:
+    if booking_reply:
         return booking_assistant_internal(user_input, session_id)
 
     return faq_internal(user_input)
