@@ -47,9 +47,14 @@ export default function FAQWidget() {
 
       if (data.session_id) setSessionId(data.session_id);
 
+      const reply =
+        data.message ||
+        data.answer ||
+        data.response ||
+        "I couldn't find an answer yet.";
       addMessage({
         role: "assistant",
-        content: data.message || "I couldn't find an answer yet.",
+        content: reply,
         availableSlots: Array.isArray(data.available_slots) ? data.available_slots : [],
         slotsDisabled: false,
       });
