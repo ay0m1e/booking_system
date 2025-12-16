@@ -343,25 +343,24 @@ def assistant():
         return jsonify({"error":"No query identified"})
     
     
+    extracted = extract_booking_intent(user_input)
+    
+    has_booking_signal = (
+        extracted.get("service")
+        or extracted.get("date")
+        or extracted.get("time_window")
+        or any(word in user_input.lower() for word in [
+            "book", "booking", "appointment", "schedule", "haircut"
+        ])
+    )
     if session_id and session_id in ASSISTANT_SESSIONS:
         session = ASSISTANT_SESSIONS[session_id]
         
         if session["intent"] == "booking":
-            return booking_assistant_internal(user_input, session_id)
-    
-    intent = classify_assistant_intent(user_input)
-    
-    
-    if intent == 'booking':
-        extracted = booking_assistant_internal(user_input)
+            return handle_booking_followup(user_input, session_id)
         
-        if (
-            extracted.get("service")
-        or extracted.get("date")
-        or extracted.get("time_window")
-        or any(word in user_input.lower() for word in ["book", "appointment", "schedule"])
-        ):
-            return booking_assistant_internal(user_input)
+    if has_booking_signal:
+        return booking_assistant_internal(user_input, session_id)
     
     return faq_internal(user_input)
 
