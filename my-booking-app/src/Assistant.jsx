@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import "./FAQWidget.css";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import "./Assistant.css";
 
 const API_ROOT = "https://bookingsystem-production-19c2.up.railway.app";
 
-export default function FAQWidget() {
-  const [open, setOpen] = useState(false);
+export default function Assistant() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState(null);
@@ -16,7 +17,7 @@ export default function FAQWidget() {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, loading, open]);
+  }, [messages, loading]);
 
   const addMessage = (message) => {
     const id = `msg-${msgIdRef.current++}`;
@@ -43,27 +44,27 @@ export default function FAQWidget() {
       });
       const data = await res.json().catch(() => ({}));
 
-      if (!res.ok) throw new Error(data.error || "Unable to get an answer right now.");
+      if (!res.ok) throw new Error(data.error || "Unable to reply right now.");
 
       if (data.session_id) setSessionId(data.session_id);
 
       addMessage({
         role: "assistant",
-        content: data.message || "I couldn't find an answer yet.",
+        content: data.message || "I couldn't find an answer just now.",
         availableSlots: Array.isArray(data.available_slots) ? data.available_slots : [],
         slotsDisabled: false,
       });
     } catch (error) {
       addMessage({
         role: "assistant",
-        content: error.message || "Something went wrong.",
+        content: error.message || "Something went wrong. Please try again.",
       });
     } finally {
       setLoading(false);
     }
   }
 
-  function handleSend(e) {
+  function handleSubmit(e) {
     e.preventDefault();
     if (!input.trim() || loading) return;
     sendToAssistant(input);
@@ -79,49 +80,40 @@ export default function FAQWidget() {
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend(e);
+      handleSubmit(e);
     }
   }
 
   return (
-    <>
-      <button className="faq-fab" onClick={() => setOpen((o) => !o)}>
-        Assistant
-      </button>
-
-      {open && (
-        <div className="faq-widget">
-          <div className="faq-widget__header">
-            <div>
-              <h3 className="faq-widget__title">Assistant</h3>
-              <p className="faq-widget__subtitle">
-                Ask about bookings, availability, or salon info.
-              </p>
-            </div>
-            <button
-              className="faq-widget__close"
-              onClick={() => setOpen(false)}
-              aria-label="Close assistant"
-            >
-              ✕
-            </button>
+    <div className="assistant-page">
+      <Header />
+      <div className="assistant-shell">
+        <section className="assistant-card">
+          <div className="assistant-header">
+            <h1 className="assistant-title">Assistant</h1>
+            <p className="assistant-subtitle">
+              Ask anything about booking or salon details and get guided replies.
+            </p>
           </div>
 
-          <div className="faq-widget__chat">
+          <div className="assistant-chat-window">
             {messages.length === 0 && !loading && (
-              <div className="faq-widget__empty">
-                Hi! Ask me anything about services or booking.
+              <div className="assistant-empty">
+                Start a conversation about services, availability, or salon info.
               </div>
             )}
 
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`chat-bubble ${
-                  msg.role === "user" ? "chat-bubble-user" : "chat-bubble-bot"
+                className={`assistant-bubble ${
+                  msg.role === "user"
+                    ? "assistant-bubble--user"
+                    : "assistant-bubble--bot"
                 }`}
               >
                 <p className="assistant-bubble__text">{msg.content}</p>
+
                 {msg.role === "assistant" && msg.availableSlots?.length ? (
                   <div className="assistant-slots">
                     {msg.availableSlots.map((slot) => (
@@ -140,8 +132,8 @@ export default function FAQWidget() {
             ))}
 
             {loading && (
-              <div className="chat-bubble chat-bubble-bot">
-                <span className="faq-typing">
+              <div className="assistant-bubble assistant-bubble--bot">
+                <span className="assistant-typing">
                   <span className="dot" />
                   <span className="dot" />
                   <span className="dot" />
@@ -151,21 +143,27 @@ export default function FAQWidget() {
             <div ref={chatEndRef} />
           </div>
 
-          <form className="faq-widget__input" onSubmit={handleSend}>
+          <form className="assistant-input-bar" onSubmit={handleSubmit}>
             <textarea
+              className="assistant-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a question..."
+              placeholder="Type a question or booking request..."
               rows={1}
               disabled={loading}
             />
-            <button type="submit" disabled={loading || !input.trim()}>
-              {loading ? "..." : "Send"}
+            <button
+              className="assistant-send"
+              type="submit"
+              disabled={loading || !input.trim()}
+            >
+              {loading ? "Sending..." : "Send"}
             </button>
           </form>
-        </div>
-      )}
-    </>
+        </section>
+      </div>
+      <Footer />
+    </div>
   );
 }

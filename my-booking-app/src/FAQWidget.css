@@ -83,6 +83,27 @@
   color: var(--color-text-soft);
 }
 
+.chat-bubble {
+  max-width: 88%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-soft);
+  line-height: 1.5;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.chat-bubble-user {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.chat-bubble-bot {
+  align-self: flex-start;
+  background: #f3f4f6;
+  color: var(--color-text);
+}
+
 .faq-widget__input {
   display: flex;
   gap: var(--space-3);
@@ -115,6 +136,32 @@
   cursor: not-allowed;
 }
 
+.assistant-bubble__text {
+  margin: 0 0 8px 0;
+  white-space: pre-wrap;
+}
+
+.assistant-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assistant-slot {
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  min-width: 96px;
+}
+
+.assistant-slot:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 640px) {
   .faq-fab {
     bottom: 16px;
@@ -126,5 +173,14 @@
     left: 16px;
     width: auto;
     max-height: 75vh;
+  }
+
+  .chat-bubble {
+    max-width: 100%;
+  }
+
+  .assistant-slot {
+    width: 100%;
+    text-align: center;
   }
 }

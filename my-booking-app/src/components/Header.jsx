@@ -84,6 +84,12 @@ export default function Header() {
           >
             Reviews
           </Link>
+          <Link
+            to="/assistant"
+            className="header__link"
+          >
+            Assistant
+          </Link>
           {isAdmin && (
             <div className="header__admin">
               <button
@@ -160,6 +166,13 @@ export default function Header() {
           <a href="#testimonials" className="header__mobile-link">
             Reviews
           </a>
+          <Link
+            to="/assistant"
+            className="header__mobile-link"
+            onClick={() => setMenuOpen(false)}
+          >
+            Assistant
+          </Link>
           {isAdmin && (
             <Link
               to="/admin/services"
