@@ -10,6 +10,7 @@ import bcrypt
 import psycopg2
 from groq import Groq
 import json
+import uuid
 
 
 from db import get_db
@@ -29,6 +30,8 @@ TIME_SLOTS = [
     "16:00",
     "17:00"
 ]
+
+ASSISTANT_SESSIONS = {}
 
 
 app = Flask(__name__)
@@ -309,22 +312,68 @@ def classify_assistant_intent(user_input):
     
     return response.choices[0].message.content.strip().lower()
 
+def handle_booking_followup(user_input, session):
+    chosen = user_input.strip()
+    
+    if chosen in session["available_slots"]:
+        return jsonify({
+            "message":(
+                f"Great! I can book your {session['service']} on"
+                f"{session['date']} at {chosen}. Please confirm to proceed."
+            ),
+            "confirmed_slot": chosen
+        }), 200
+        
+    return jsonify({
+        "message": (
+            f"Please choose one of these times: "
+            f"{' or '.join(session['available_slots'])}"
+        )
+    }), 200
+    
 
 @app.post("/api/assistant")
 def assistant():
     data = request.get_json()
     user_input = data.get("query", "").strip()
+    session_id = data.get("session_id")
     
     
     if not user_input:
         return jsonify({"error":"No query identified"})
     
+    
+    if session_id and session_id in ASSISTANT_SESSIONS:
+        session = ASSISTANT_SESSIONS[session_id]
+        
+        if session["intent"] == "booking":
+            return booking_assistant_internal(user_input, session_id)
+    
     intent = classify_assistant_intent(user_input)
+    
     
     if intent == 'booking':
         return booking_assistant_internal(user_input)
     
     return faq_internal(user_input)
+
+
+def normalise_date(value):
+    if not value:
+        return None
+    
+    value = value.lower().strip()
+    today = datetime.date.today()
+    
+    if value == "today":
+        return today.isoformat()
+    
+    if value == "tomorrow":
+        return (today +datetime.timedelta(days=1)).isoformat()
+    
+    
+    return value
+    
 
 @app.post("/api/ai/booking-assistant")
 def booking_assistant():
@@ -332,45 +381,104 @@ def booking_assistant():
     user_input = data.get("query", "").strip()
     return booking_assistant_internal(user_input)
     
-def booking_assistant_internal(user_input):
-    if not user_input:
-        return jsonify({"error":"No query provided"}), 400
-
-    # Step 1: extract intent (service, date, time window)
+def booking_assistant_internal(user_input, session_id=None):
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        
+    session = ASSISTANT_SESSIONS.get(session_id)
+    
+    if not session:
+        session = {
+            "intent": "booking",
+            "service": None,
+            "date": None,
+            "time_window": None,
+            "available_slots": []
+        }
+        
+        ASSISTANT_SESSIONS[session_id] = session
+        
     intent = extract_booking_intent(user_input)
-    # Step 2: check availability
-    services = get_active_services()
-    matched_service = match_service(intent.get("service"), services)
     
-    if not matched_service:
+    if intent.get("service") and not session["time_window"]:
+        services = get_active_services()
+        matched = match_service(intent["service"], services)
+        
+        if not matched:
+            return({
+                "session_id": session_id,
+                "message":"I couldn't find that service. Please choose another one."
+            }), 200
+            
+        session["service"] = matched["name"]
+        
+        
+    if intent.get("date") and not session["date"]:
+        session["date"] = normalise_date(intent["date"])
+        
+        
+    if intent.get("time_window") and not session["time_window"]:
+        session["time_window"] = intent["time_window"]
+        
+        
+    if not session ["service"]:
         return jsonify({
-            "message":" Sorry, I couldn't find that service. Please choose another service from our list"
+            "session_id": session_id,
+            "message": "What service would you like to book?"
         }), 200
         
-    date = intent.get("date")
-    if not date:
+    if not session ["date"]:
         return jsonify({
-            "message":"Please specify a date for your booking."
+            "session_id": session_id,
+            "message": "What day would you like to book for?"
         }), 200
         
-    candidate_times = filter_time_slots(intent.get("time_window"))
+    if not session ["time_window"]:
+        return jsonify({
+            "session_id": session_id,
+            "message": "What time works best for you?"
+        }), 200
+        
     
-    available_slots = get_available_slots_for_times(matched_service["name"],
-                                                    date,
-                                                    candidate_times
-                                                    )
+    if not session["available_slots"]:
+        candidate_times = filter_time_slots(session["time_window"])
+        
+        session["available_slots"] = get_available_slots_for_times(
+            session["service"],
+            session["date"],
+            candidate_times
+        )
+        
+    slots = session["available_slots"]
     
-    message = format_booking_response(
-        matched_service["name"],
-        date,
-        available_slots
-    )
+    if not slots:
+        return jsonify({
+            "session_id":session_id,
+            "message": (
+                f"Sorry, there are no available times for a {session['service']} "
+                f"on {session['date']}. Would you like to try another day?"
+            )
+        }), 200
+        
+        
+    if len(slots) == 1:
+        return jsonify({
+            "message": (
+                f"Sorry, there are no available times for a {session['service']} "
+                f"on {session['date']}. Would you like to try another day?"
+            )
+        })
     
     # Step 3: respond nicely    
     
     return jsonify({
-        "message": message,
-        "available_slots": available_slots
+        "session_id" : session_id,
+        "available_slots": slots,
+        "message": (
+            f"I have {len(slots)} available times for a {session['service']} "
+            f"on {session['date']}.\n\n"
+            f"Would you like { ' or '.join(slots) }?"
+        )
         }), 200
 
 
