@@ -357,7 +357,11 @@ def assistant():
         session = ASSISTANT_SESSIONS[session_id]
         
         if session["intent"] == "booking":
-            return handle_booking_followup(user_input, session_id)
+            # If we already offered times, treat the next reply as a slot choice.
+            if session.get("available_slots"):
+                return handle_booking_followup(user_input, session_id)
+            # Otherwise, continue the booking flow to gather missing details instead of erroring.
+            return booking_assistant_internal(user_input, session_id)
         
     if has_booking_signal:
         return booking_assistant_internal(user_input, session_id)
