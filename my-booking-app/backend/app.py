@@ -247,6 +247,10 @@ def touch_session(session):
     session["updated_at"] = datetime.datetime.utcnow()
 
 
+def clear_session(session_id):
+    ASSISTANT_SESSIONS.pop(session_id, None)
+
+
 def get_available_slots_for_times(service, date_string, candidate_times):
     try:
         date_main = datetime.date.fromisoformat(date_string)
@@ -368,13 +372,11 @@ def assistant():
         return jsonify({"error":"No query identified"})
     
     
-    extracted = extract_booking_intent(user_input)
     intent_label = classify_assistant_intent(user_input)
+    # Keep booking routing narrow so FAQ-style questions (e.g., parking) don't get misrouted.
+    extracted = extract_booking_intent(user_input)
     has_booking_signal = (
         intent_label == "booking"
-        or extracted.get("service")
-        or extracted.get("date")
-        or extracted.get("time_window")
         or any(word in user_input.lower() for word in [
             "book", "booking", "appointment", "schedule", "haircut"
         ])
@@ -386,9 +388,14 @@ def assistant():
         touch_session(session)
         # If we already offered times, treat the next reply as a slot choice.
         if session.get("available_slots"):
+            # If the user is no longer talking about booking, drop the session and answer as FAQ.
+            if not has_booking_signal:
+                clear_session(session_id)
+                return faq_internal(user_input)
             return handle_booking_followup(user_input, session)
         # If the user clearly isn't talking about booking, drop to FAQ without using stale booking data.
         if not has_booking_signal:
+            clear_session(session_id)
             return faq_internal(user_input)
         return booking_assistant_internal(user_input, session_id)
 
