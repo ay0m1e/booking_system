@@ -353,7 +353,15 @@ def assistant():
     
     
     if intent == 'booking':
-        return booking_assistant_internal(user_input)
+        extracted = booking_assistant_internal(user_input)
+        
+        if (
+            extracted.get("service")
+        or extracted.get("date")
+        or extracted.get("time_window")
+        or any(word in user_input.lower() for word in ["book", "appointment", "schedule"])
+        ):
+            return booking_assistant_internal(user_input)
     
     return faq_internal(user_input)
 
