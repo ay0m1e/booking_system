@@ -475,7 +475,7 @@ def booking_assistant_internal(user_input, session_id=None):
         if not matched:
             return jsonify({
                 "session_id": session_id,
-                "message":"I couldn't find that service. Please choose another one."
+                "message":"What service would you like to book?"
             }), 200
             
         session["service"] = matched["name"]
