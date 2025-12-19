@@ -166,12 +166,28 @@ def get_active_services():
 def match_service(intent_service, services):
     if not intent_service:
         return None
-    
-    intent_service = intent_service.lower()
-    
+
+    def normalise_service_text(value):
+        # Strip punctuation (including apostrophes) so close matches still work.
+        cleaned = re.sub(r"[^a-z0-9\\s]", " ", value.lower())
+        return " ".join(cleaned.split())
+
+    intent_clean = normalise_service_text(intent_service)
+    intent_words = set(intent_clean.split())
+
     for service in services:
-        if intent_service in service["name"].lower():
+        name_clean = normalise_service_text(service["name"])
+        name_words = set(name_clean.split())
+
+        # Direct substring check on cleaned text covers punctuation differences.
+        if intent_clean and (intent_clean in name_clean or name_clean in intent_clean):
             return service
+
+        # Fallback: word overlap so minor misspellings or extra words still match.
+        if intent_words and name_words:
+            overlap = len(intent_words & name_words)
+            if overlap / max(len(intent_words), len(name_words)) >= 0.6:
+                return service
     return None
     
 def parse_hour(value):
@@ -461,6 +477,10 @@ def booking_assistant_internal(user_input, session_id=None):
         touch_session(session)
         
     intent = extract_booking_intent(user_input)
+
+    # If we're already in a booking thread and still waiting for a service, use the raw reply as a fallback service guess.
+    if session_id and session and session.get("service") is None and not intent.get("service") and user_input:
+        intent["service"] = user_input.strip()
     
     if not session.get("service") and not intent.get("service"):
         return jsonify({
