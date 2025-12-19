@@ -168,8 +168,9 @@ def match_service(intent_service, services):
         return None
 
     def normalise_service_text(value):
-        # Strip punctuation (including apostrophes) so close matches still work.
-        cleaned = re.sub(r"[^a-z0-9\\s]", " ", value.lower())
+        # Strip apostrophes before removing other punctuation so words stay joined (e.g., \"boy's\" -> \"boys\").
+        lower = re.sub(r"[’']", "", value.lower())
+        cleaned = re.sub(r"[^a-z0-9\s]", " ", lower)
         return " ".join(cleaned.split())
 
     intent_clean = normalise_service_text(intent_service)
