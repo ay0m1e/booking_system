@@ -71,7 +71,7 @@ def load_faq_text():
 
 @app.post("/api/faq")
 def faq():
-    data = request.get_json()
+    data = request.get_json() or {}
     user_input = data.get("query", "").strip()
     return faq_internal(user_input)
     
@@ -82,7 +82,7 @@ def faq_internal(user_input):
     faq_context = load_faq_text()
     
     if not faq_context:
-        return jsonify({"answer":"No FAQ information is currently available"}), 200
+        return jsonify({"message": "No FAQ information is currently available", "answer": "No FAQ information is currently available"}), 200
     
     
     response = groq_client.chat.completions.create(
@@ -107,8 +107,8 @@ def faq_internal(user_input):
     )
 
     answer = response.choices[0].message.content
-    
-    return jsonify({"answer": answer}), 200
+    # Return both keys so newer clients get a consistent message field without breaking older consumers.
+    return jsonify({"message": answer, "answer": answer}), 200
 
 def extract_booking_intent(user_input):
     response = groq_client.chat.completions.create(
@@ -363,13 +363,13 @@ def handle_booking_followup(user_input, session):
 
 @app.post("/api/assistant")
 def assistant():
-    data = request.get_json()
+    data = request.get_json() or {}
     user_input = data.get("query", "").strip()
     session_id = data.get("session_id")
     
     
     if not user_input:
-        return jsonify({"error":"No query identified"})
+        return jsonify({"error":"No query identified"}), 400
     
     
     intent_label = classify_assistant_intent(user_input)
@@ -436,7 +436,7 @@ def normalise_date(value):
 
 @app.post("/api/ai/booking-assistant")
 def booking_assistant():
-    data = request.get_json()
+    data = request.get_json() or {}
     user_input = data.get("query", "").strip()
     return booking_assistant_internal(user_input)
     
@@ -467,7 +467,7 @@ def booking_assistant_internal(user_input, session_id=None):
         matched = match_service(intent["service"], services)
         
         if not matched:
-            return({
+            return jsonify({
                 "session_id": session_id,
                 "message":"I couldn't find that service. Please choose another one."
             }), 200
@@ -574,19 +574,28 @@ def is_valid_email(email: str) -> bool:
     domain = email.split("@", 1)[1]
     return domain in ALLOWED_EMAIL_DOMAINS
 
+# Helper so both US and UK spellings of the auth header are accepted, preferring the standard header.
+def get_auth_header():
+    return request.headers.get("Authorization") or request.headers.get("Authorisation") or ""
+
+
+def get_bearer_token():
+    auth_header = get_auth_header()
+    parts = auth_header.split(" ", 1)
+    if len(parts) != 2 or parts[0] != "Bearer" or not parts[1]:
+        return None
+    return parts[1].strip()
+
 
 def require_admin(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        auth_header = request.headers.get("Authorisation", "")
-        
-        if not auth_header.startswith("Bearer "):
-            return jsonify({"error":"Missing or invalid Authorisation header"}), 401
-        
-        token = auth_header.split(" ")[1]
+        token = get_bearer_token()
+        if not token:
+            return jsonify({"error":"Missing or invalid Authorization header"}), 401
         
         try:
-            payload = jwt.decode(token, os.getenv("JWT_SECRET"), algorithms=["HS256"])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         except Exception:
             return jsonify({"error": "Invalid or expired token"}), 401
         
@@ -666,7 +675,7 @@ def admin_delete_booking(booking_id):
     
     try:
         cur.execute("""
-                    SELECT id
+                    SELECT id, date, time
                     FROM bookings
                     WHERE id = %s;
                     """, (booking_id,))
@@ -675,8 +684,22 @@ def admin_delete_booking(booking_id):
         if row is None:
             connection.close()
             return jsonify({"error": "Booking not found"}), 404
-        
-        booking_datetime = datetime.datetime.combine(row["date"], datetime.time.fromisoformat(row["time"]))
+
+        # Fetch the date and time explicitly to avoid KeyErrors while enforcing cancellation rules.
+        booking_date = row.get("date") if isinstance(row, dict) else None
+        booking_time = row.get("time") if isinstance(row, dict) else None
+
+        if not booking_date or not booking_time:
+            connection.close()
+            return jsonify({"error": "Booking date or time unavailable"}), 500
+
+        try:
+            time_component = booking_time if isinstance(booking_time, datetime.time) else datetime.time.fromisoformat(str(booking_time))
+        except (TypeError, ValueError):
+            connection.close()
+            return jsonify({"error": "Booking time is invalid"}), 500
+
+        booking_datetime = datetime.datetime.combine(booking_date, time_component)
         now = datetime.datetime.now()
         
         if booking_datetime < now:
@@ -732,7 +755,7 @@ def admin_get_services():
 @app.post("/api/admin/services")
 @require_admin
 def admin_create_service():
-    data = request.get_json()
+    data = request.get_json() or {}
     
     name = data.get("name")
     price = data.get("price")
@@ -770,7 +793,7 @@ def admin_create_service():
 def admin_update_service(service_id):
     
     
-    data = request.get_json()
+    data = request.get_json() or {}
     
     name = data.get("name")
     price = data.get("price")
@@ -877,22 +900,19 @@ def admin_delete_service(service_id):
     
     
     connection.close()
-    return ({"service": updated})
+    return jsonify({"service": updated}), 200
     
     
 # Decorator that checks the Bearer header before hitting protected routes.
 def require_auth(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        auth_header = request.headers.get("Authorisation", "")
-        
-        if not auth_header.startswith("Bearer "):
-            return jsonify({"error":"Missing or invalid Authorisation header"}), 401
-        
-        token = auth_header.split(" ")[1]
+        token = get_bearer_token()
+        if not token:
+            return jsonify({"error":"Missing or invalid Authorization header"}), 401
         
         try:
-            payload = jwt.decode(token, os.getenv("JWT_SECRET"), algorithms=["HS256"])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
             user_id = payload.get("user_id")
             if not user_id:
                 return jsonify({"error":"Invalid token"}), 401
@@ -913,7 +933,7 @@ def require_auth(f):
 @app.post("/api/register")
 def register_user():
 
-    data = request.get_json()
+    data = request.get_json() or {}
     
     name = data.get("name", "").strip()
     email = data.get("email", "").strip().lower()
@@ -1220,11 +1240,10 @@ def get_my_bookings(user_id):
 @app.delete("/api/bookings/<int:booking_id>")
 def delete_booking(booking_id):
     try:
-        auth_header = request.headers.get("Authorisation","")
-        if not auth_header.startswith("Bearer "):
+        token = get_bearer_token()
+        if not token:
             return jsonify({"error":"Missing or invalid token"}), 401
-        
-        token = auth_header.split("Bearer ")[1].strip()
+
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user_id = payload.get("user_id")
         if not user_id:
