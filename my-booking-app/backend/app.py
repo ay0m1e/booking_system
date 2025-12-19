@@ -462,6 +462,12 @@ def booking_assistant_internal(user_input, session_id=None):
         
     intent = extract_booking_intent(user_input)
     
+    if not session.get("service") and not intent.get("service"):
+        return jsonify({
+            "session_id": session_id,
+            "message":"What service would you like to book?"
+        })
+    
     if intent.get("service") and not session["service"]:
         services = get_active_services()
         matched = match_service(intent["service"], services)
