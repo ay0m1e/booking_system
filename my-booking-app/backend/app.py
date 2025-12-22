@@ -725,9 +725,19 @@ def get_auth_header():
 def get_bearer_token():
     auth_header = get_auth_header()
     parts = auth_header.split(" ", 1)
-    if len(parts) != 2 or parts[0] != "Bearer" or not parts[1]:
-        return None
-    return parts[1].strip()
+    if len(parts) == 2 and parts[0] == "Bearer" and parts[1]:
+        return parts[1].strip()
+    # Fallbacks so logged-in users aren't blocked if the header is missing.
+    cookie_token = request.cookies.get("ms_token") or request.cookies.get("token")
+    if cookie_token:
+        return cookie_token
+    body = {}
+    try:
+        body = request.get_json(silent=True) or {}
+    except Exception:
+        body = {}
+    body_token = body.get("token") or body.get("auth_token")
+    return body_token or None
 
 # Decode the current request's token into a user id (if present/valid).
 def get_request_user_id():
