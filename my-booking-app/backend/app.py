@@ -358,23 +358,122 @@ def classify_assistant_intent(user_input):
     
     return response.choices[0].message.content.strip().lower()
 
-def handle_booking_followup(user_input, session):
-    chosen = user_input.strip()
-    
-    if chosen in session["available_slots"]:
+def handle_booking_followup(user_input, session_id, session):
+    text = (user_input or "").strip().lower()
+
+    # If we're waiting for confirmation, handle yes/no deterministically.
+    if session.get("status") == "awaiting_confirmation":
+        yes_words = {"yes", "yep", "yeah", "confirm", "book it", "go ahead", "okay", "ok"}
+        no_words = {"no", "nope", "not now", "cancel", "stop", "change"}
+
+        if text in yes_words:
+            # Need a logged-in user to actually book
+            token = get_bearer_token()
+            if not token:
+                return jsonify({
+                    "session_id": session_id,
+                    "message": "Please log in first so I can confirm your booking."
+                }), 200
+
+            try:
+                payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+                user_id = payload.get("user_id")
+            except Exception:
+                return jsonify({
+                    "session_id": session_id,
+                    "message": "Your login session expired. Please log in again."
+                }), 200
+
+            booking, err, status = create_booking_in_db(
+                user_id=user_id,
+                service=session.get("service"),
+                date_string=session.get("date"),
+                time_string=session.get("selected_time"),
+                notes=None
+            )
+
+            if err:
+                # If slot got taken, re-check and offer new slots
+                if status == 409:
+                    candidate_times = filter_time_slots(session.get("time_window"))
+                    session["available_slots"] = get_available_slots_for_times(
+                        session["service"], session["date"], candidate_times
+                    )
+                    session["status"] = None
+                    session["selected_time"] = None
+                    touch_session(session)
+
+                    slots = session["available_slots"]
+                    if not slots:
+                        return jsonify({
+                            "session_id": session_id,
+                            "message": (
+                                f"Sorry, that time was just taken and there are no other "
+                                f"available slots for {session['service']} on {session['date']}. "
+                                f"Would you like to try another day?"
+                            )
+                        }), 200
+
+                    return jsonify({
+                        "session_id": session_id,
+                        "available_slots": slots,
+                        "message": (
+                            f"Sorry, that time was just taken. Here are the next available times: "
+                            f"{' or '.join(slots)}"
+                        )
+                    }), 200
+
+                return jsonify({
+                    "session_id": session_id,
+                    "message": "Sorry, I couldn’t complete that booking. Please try again."
+                }), 200
+
+            # Success
+            clear_session(session_id)
+            return jsonify({
+                "message": (
+                    f"✅ Booking confirmed!\n\n"
+                    f"Service: {booking['service']}\n"
+                    f"Date: {booking['date']}\n"
+                    f"Time: {booking['time']}\n\n"
+                    f"You can view it in My Bookings."
+                ),
+                "booking": booking
+            }), 200
+
+        if text in no_words:
+            # Go back to choosing a time
+            session["status"] = None
+            session["selected_time"] = None
+            touch_session(session)
+            return jsonify({
+                "session_id": session_id,
+                "available_slots": session.get("available_slots", []),
+                "message": "No problem. Pick a different time from the available slots."
+            }), 200
+
         return jsonify({
-            "message":(
-                f"Great! I can book your {session['service']} on "
-                f"{session['date']} at {chosen}. Please confirm to proceed."
-            ),
-            "confirmed_slot": chosen
+            "session_id": session_id,
+            "message": "Please reply 'yes' to confirm, or 'no' to choose another time."
         }), 200
-        
+
+    # Otherwise, treat this message as a slot choice (only if we have slots)
+    chosen = user_input.strip()
+    if chosen in session.get("available_slots", []):
+        session["selected_time"] = chosen
+        session["status"] = "awaiting_confirmation"
+        touch_session(session)
+        return jsonify({
+            "session_id": session_id,
+            "message": (
+                f"Great. I can book your {session['service']} on {session['date']} at {chosen}.\n\n"
+                f"Reply 'yes' to confirm, or 'no' to choose another time."
+            )
+        }), 200
+
     return jsonify({
-        "message": (
-            f"Please choose one of these times: "
-            f"{' or '.join(session['available_slots'])}"
-        )
+        "session_id": session_id,
+        "message": f"Please choose one of these times: {' or '.join(session.get('available_slots', []))}"
     }), 200
     
 
@@ -414,7 +513,7 @@ def assistant():
             if not booking_reply:
                 clear_session(session_id)
                 return faq_internal(user_input)
-            return handle_booking_followup(user_input, session)
+            return handle_booking_followup(user_input, session, session_id)
         # If the user clearly isn't talking about booking, drop to FAQ without using stale booking data.
         if not booking_reply:
             clear_session(session_id)
@@ -1061,69 +1160,54 @@ def login_user():
             "is_admin": user["is_admin"]
         }
     })
+    
 
-# Booking endpoint needs auth so I know who's making the reservation.
-@app.post("/api/book")
-@require_auth
-def book_appointment(user_id):
-    data = request.get_json() or {}
+
+def create_booking_in_db(user_id, service, date_string, time_string, notes=None):
     
-    service = data.get("service", "").strip()
-    date_string = data.get("date", "").strip()
-    time_string = data.get("time","").strip()
-    notes = data.get("notes", "").strip() if data.get("notes") else None
+    service = (service or "").strip()
+    date_string = (date_string or "").strip()
+    time_string = (time_string or "").strip() 
+    notes = notes.strip() if isinstance(notes, str) and notes.strip() else None
     
+    
+    if not service:
+        return None, {"error":"Missing service"}, 400
+    if not date_string:
+        return None, {"error":"Missing date"}, 400
+    if not time_string:
+        return None, {"error": "Missing time"}, 400
     
     try:
-        booking_date = datetime.date.fromisoformat(date_string)
+        booking_date = datetime.date.isoformat(date_string)
+        
     except ValueError:
-        return jsonify({"error":"Invalid date format. Use YYYY-MM-DD"}), 400
-    
-    today = datetime.date.today()
-    if booking_date < today:
-        return jsonify({"error":"Cannot book past dates"}), 400
-    
+        return None, {"error":"Invalid date format. Use YYYY-MM-DD"}, 400
     
     connection = get_db()
-    cur = connection.cursor()
-    
-    cur.execute("""
-                SELECT name, email
-                FROM users
-                WHERE id = %s
-                """, (user_id,))
-    user_profile = cur.fetchone()
-    if not user_profile:
-        connection.close()
-        return jsonify({"error": "User profile not found"}), 404
-    
-    clientName = user_profile.get("name") or "Guest"
-    clientMail = user_profile.get("email") or ""
-    
+    cur = connection.cursor(cursor_factory=RealDictCursor)
     
     try:
-        # make sure the service/time combo isn't already taken by somebody else.
+        # service conflict handling
         cur.execute("""
-            SELECT id FROM bookings
-            WHERE date = %s AND time = %s AND service = %s;
-        """, (booking_date, time_string, service))
-
-        service_conflict = cur.fetchone()
-        if service_conflict:
+                    SELECT id FROM bookings
+                    WHERE date = %s AND time = %s AND service = %s;
+                    """, (booking_date, time_string, service))
+        if cur.fetchone():
             connection.close()
-            return jsonify({"error": "This service is already booked at that time"}), 409
-
-
+            return None, {"error":"This service is already booked at that time"}, 409
+        
+        
+        # user conflict handling
         cur.execute("""
             SELECT id FROM bookings
             WHERE date = %s AND time = %s AND user_id = %s;
         """, (booking_date, time_string, user_id))
-
-        user_conflict = cur.fetchone()
-        if user_conflict:
+        if cur.fetchone():
             connection.close()
-            return jsonify({"error": "You already have a booking at this time"}), 409
+            return None, {"error": "You already have a booking at this time"}, 409
 
+        # create booking 
         cur.execute("""
             INSERT INTO bookings (user_id, service, date, time, notes)
             VALUES (%s, %s, %s, %s, %s)
@@ -1132,17 +1216,32 @@ def book_appointment(user_id):
 
         booking = cur.fetchone()
         connection.commit()
-
-    except Exception as e:
+        connection.close()
+        return booking, None, 201
+        
+    except Exception:
         connection.rollback()
         connection.close()
-        return jsonify({"error": "Failed to create booking"}), 500
+        return None, {"error": "Failed to create booking"}
 
-    connection.close()
+# Booking endpoint needs auth so I know who's making the reservation.
+@app.post("/api/book")
+@require_auth
+def book_appointment(user_id):
+    data = request.get_json() or {}
 
-    return jsonify({
-        "booking": booking
-    }), 201
+    booking, err, status = create_booking_in_db(
+        user_id=user_id,
+        service=data.get("service"),
+        date_string=data.get("date"),
+        time_string=data.get("time"),
+        notes=data.get("notes")
+    )
+
+    if err:
+        return jsonify(err), status
+
+    return jsonify({"booking": booking}), 201
     
     
 # Availability endpoint is public so the frontend can show slots.
