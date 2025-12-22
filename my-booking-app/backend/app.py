@@ -213,6 +213,10 @@ def filter_time_slots(time_window):
         return TIME_SLOTS
     
     time_window = time_window.lower()
+
+    # If the user gave an exact slot we support (e.g., "16:00"), keep only that slot.
+    if time_window in [slot.lower() for slot in TIME_SLOTS]:
+        return [slot for slot in TIME_SLOTS if slot.lower() == time_window]
     
     def hour(slot):
         return int(slot.split(":")[0])
@@ -619,8 +623,12 @@ def booking_assistant_internal(user_input, session_id=None):
         session["date"] = normalized
         
         
-    if intent.get("time_window") and not session["time_window"]:
-        session["time_window"] = intent["time_window"]
+    if not session["time_window"]:
+        if intent.get("time_window"):
+            session["time_window"] = intent["time_window"]
+        elif user_input and user_input in TIME_SLOTS:
+            # Honor an exact time reply even if the extractor missed it.
+            session["time_window"] = user_input
         
         
     if not session ["service"]:
