@@ -486,8 +486,13 @@ def assistant():
     
     if not user_input:
         return jsonify({"error":"No query identified"}), 400
-    
-    
+
+    session = get_session(session_id) if session_id else None
+    # If the user clicks a provided slot, skip LLM calls to avoid flaky upstream errors.
+    if session and session.get("intent") == "booking" and session.get("available_slots") and user_input in session["available_slots"]:
+        touch_session(session)
+        return handle_booking_followup(user_input, session)
+
     intent_label = classify_assistant_intent(user_input)
     # Keep booking routing narrow so FAQ-style questions (e.g., parking) don't get misrouted.
     extracted = extract_booking_intent(user_input)
@@ -497,8 +502,6 @@ def assistant():
             "book", "booking", "appointment", "schedule", "haircut"
         ])
     )
-
-    session = get_session(session_id) if session_id else None
 
     # When already in a booking session, accept extracted date/time/service hints even if classifier is unsure.
     booking_reply = has_booking_signal
