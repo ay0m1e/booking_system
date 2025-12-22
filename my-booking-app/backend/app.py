@@ -491,7 +491,7 @@ def assistant():
     # If the user clicks a provided slot, skip LLM calls to avoid flaky upstream errors.
     if session and session.get("intent") == "booking" and session.get("available_slots") and user_input in session["available_slots"]:
         touch_session(session)
-        return handle_booking_followup(user_input, session)
+        return handle_booking_followup(user_input, session_id, session)
 
     intent_label = classify_assistant_intent(user_input)
     # Keep booking routing narrow so FAQ-style questions (e.g., parking) don't get misrouted.
@@ -516,7 +516,7 @@ def assistant():
             if not booking_reply:
                 clear_session(session_id)
                 return faq_internal(user_input)
-            return handle_booking_followup(user_input, session, session_id)
+            return handle_booking_followup(user_input, session_id, session)
         # If the user clearly isn't talking about booking, drop to FAQ without using stale booking data.
         if not booking_reply:
             clear_session(session_id)
