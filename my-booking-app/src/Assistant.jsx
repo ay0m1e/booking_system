@@ -59,6 +59,18 @@ export default function Assistant() {
       }
     }
 
+    // Last resort: check cookies for ms_token/token so logged-in users on another tab are still recognized.
+    const cookies = document.cookie ? document.cookie.split(";") : [];
+    for (const pair of cookies) {
+      const [rawKey, ...rest] = pair.split("=");
+      const key = rawKey && rawKey.trim();
+      if (!key) continue;
+      if (tokenKeyHints.includes(key)) {
+        const val = rest.join("=").trim();
+        if (val) return decodeURIComponent(val);
+      }
+    }
+
     return "";
   }
 
@@ -84,6 +96,8 @@ export default function Assistant() {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
+        // Include cookies as a secondary auth path in case the token is stored server-side.
+        credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
 
