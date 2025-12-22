@@ -8,6 +8,7 @@ import datetime
 import jwt
 import bcrypt
 import psycopg2
+from psycopg2.extras import RealDictCursor
 from groq import Groq
 import json
 import uuid
@@ -371,21 +372,12 @@ def handle_booking_followup(user_input, session_id, session):
         no_words = {"no", "nope", "not now", "cancel", "stop", "change"}
 
         if text in yes_words:
-            # Need a logged-in user to actually book
-            token = get_bearer_token()
-            if not token:
+            # Need a logged-in user to actually book; fall back to cached session user if header is missing.
+            user_id = get_request_user_id() or session.get("user_id")
+            if not user_id:
                 return jsonify({
                     "session_id": session_id,
                     "message": "Please log in first so I can confirm your booking."
-                }), 200
-
-            try:
-                payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-                user_id = payload.get("user_id")
-            except Exception:
-                return jsonify({
-                    "session_id": session_id,
-                    "message": "Your login session expired. Please log in again."
                 }), 200
 
             booking, err, status = create_booking_in_db(
@@ -492,6 +484,11 @@ def assistant():
         return jsonify({"error":"No query identified"}), 400
 
     session = get_session(session_id) if session_id else None
+    # Cache logged-in user on the session so confirmations work even if the header drops later.
+    request_user_id = get_request_user_id()
+    if session and request_user_id:
+        session["user_id"] = request_user_id
+        touch_session(session)
     # If the user clicks a provided slot, skip LLM calls to avoid flaky upstream errors.
     if session and session.get("intent") == "booking" and session.get("available_slots") and user_input in session["available_slots"]:
         touch_session(session)
@@ -573,6 +570,7 @@ def booking_assistant_internal(user_input, session_id=None):
         session_id = str(uuid.uuid4())
         
     session = get_session(session_id)
+    request_user_id = get_request_user_id()
     
     if not session:
         session = {
@@ -581,12 +579,15 @@ def booking_assistant_internal(user_input, session_id=None):
             "date": None,
             "time_window": None,
             "available_slots": [],
-            "updated_at": datetime.datetime.utcnow()
+            "updated_at": datetime.datetime.utcnow(),
+            "user_id": request_user_id
         }
         
         ASSISTANT_SESSIONS[session_id] = session
     else:
         touch_session(session)
+        if request_user_id:
+            session["user_id"] = request_user_id
         
     intent = extract_booking_intent(user_input)
 
@@ -727,6 +728,17 @@ def get_bearer_token():
     if len(parts) != 2 or parts[0] != "Bearer" or not parts[1]:
         return None
     return parts[1].strip()
+
+# Decode the current request's token into a user id (if present/valid).
+def get_request_user_id():
+    token = get_bearer_token()
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return payload.get("user_id")
+    except Exception:
+        return None
 
 
 def require_admin(fn):
@@ -1195,8 +1207,7 @@ def create_booking_in_db(user_id, service, date_string, time_string, notes=None)
         return None, {"error": "Missing time"}, 400
     
     try:
-        booking_date = datetime.date.isoformat(date_string)
-        
+        booking_date = datetime.date.fromisoformat(date_string)
     except ValueError:
         return None, {"error":"Invalid date format. Use YYYY-MM-DD"}, 400
     
