@@ -26,9 +26,30 @@ export default function Assistant() {
   };
 
   // Reuse the same token lookup logic used in booking so assistant requests carry auth when available.
+  const tokenKeyHints = [
+    "ms_token",
+    "token",
+    "maneAuthToken",
+    "maneToken",
+    "bookingToken",
+    "authToken",
+    "jwt",
+    "accessToken",
+  ];
+
   function getStoredToken() {
-    const possible = [localStorage, sessionStorage].filter(Boolean);
-    for (const store of possible) {
+    const stores = [localStorage, sessionStorage].filter(Boolean);
+
+    // First, check known keys in order so we don't pick an old/stale token.
+    for (const store of stores) {
+      for (const key of tokenKeyHints) {
+        const val = store.getItem(key);
+        if (val) return val;
+      }
+    }
+
+    // Fallback: any key containing "token".
+    for (const store of stores) {
       for (let idx = 0; idx < store.length; idx += 1) {
         const keyName = store.key(idx);
         if (keyName && keyName.toLowerCase().includes("token")) {
@@ -37,6 +58,7 @@ export default function Assistant() {
         }
       }
     }
+
     return "";
   }
 
