@@ -25,6 +25,21 @@ export default function Assistant() {
     return id;
   };
 
+  // Reuse the same token lookup logic used in booking so assistant requests carry auth when available.
+  function getStoredToken() {
+    const possible = [localStorage, sessionStorage].filter(Boolean);
+    for (const store of possible) {
+      for (let idx = 0; idx < store.length; idx += 1) {
+        const keyName = store.key(idx);
+        if (keyName && keyName.toLowerCase().includes("token")) {
+          const value = store.getItem(keyName);
+          if (value) return value;
+        }
+      }
+    }
+    return "";
+  }
+
   async function sendToAssistant(text) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -36,10 +51,16 @@ export default function Assistant() {
     try {
       const payload = { query: trimmed };
       if (sessionId) payload.session_id = sessionId;
+      const token = getStoredToken();
+      const headers = { "Content-Type": "application/json" };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+        headers.Authorisation = `Bearer ${token}`;
+      }
 
       const res = await fetch(`${API_ROOT}/api/assistant`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
