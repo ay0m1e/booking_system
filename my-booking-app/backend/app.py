@@ -493,6 +493,11 @@ def assistant():
         touch_session(session)
         return handle_booking_followup(user_input, session_id, session)
 
+    # If we're waiting for a yes/no confirmation, handle it directly without LLM routing.
+    if session and session.get("intent") == "booking" and session.get("status") == "awaiting_confirmation":
+        touch_session(session)
+        return handle_booking_followup(user_input, session_id, session)
+
     intent_label = classify_assistant_intent(user_input)
     # Keep booking routing narrow so FAQ-style questions (e.g., parking) don't get misrouted.
     extracted = extract_booking_intent(user_input)
