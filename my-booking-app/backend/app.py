@@ -489,19 +489,13 @@ def assistant():
     if session and request_user_id:
         session["user_id"] = request_user_id
         touch_session(session)
-    # If the user clicks a provided slot, skip LLM calls to avoid flaky upstream errors.
-    if session and session.get("intent") == "booking" and session.get("available_slots") and user_input in session["available_slots"]:
-        touch_session(session)
-        return handle_booking_followup(user_input, session_id, session)
 
-    # If we're waiting for a yes/no confirmation, handle it directly without LLM routing.
-    if session and session.get("intent") == "booking" and session.get("status") == "awaiting_confirmation":
-        touch_session(session)
-        return handle_booking_followup(user_input, session_id, session)
+    # If we already have a booking session, stay in booking flow without reclassifying intent.
+    if session and session.get("intent") == "booking":
+        return booking_assistant_internal(user_input, session_id)
 
+    # No active booking session: classify to decide where to route.
     intent_label = classify_assistant_intent(user_input)
-    # Keep booking routing narrow so FAQ-style questions (e.g., parking) don't get misrouted.
-    extracted = extract_booking_intent(user_input)
     has_booking_signal = (
         intent_label == "booking"
         or any(word in user_input.lower() for word in [
@@ -509,27 +503,7 @@ def assistant():
         ])
     )
 
-    # When already in a booking session, accept extracted date/time/service hints even if classifier is unsure.
-    booking_reply = has_booking_signal
-    if session and session.get("intent") == "booking":
-        booking_reply = booking_reply or extracted.get("service") or extracted.get("date") or extracted.get("time_window")
-
-    if session and session["intent"] == "booking":
-        touch_session(session)
-        # If we already offered times, treat the next reply as a slot choice.
-        if session.get("available_slots"):
-            # If the user is no longer talking about booking, drop the session and answer as FAQ.
-            if not booking_reply:
-                clear_session(session_id)
-                return faq_internal(user_input)
-            return handle_booking_followup(user_input, session_id, session)
-        # If the user clearly isn't talking about booking, drop to FAQ without using stale booking data.
-        if not booking_reply:
-            clear_session(session_id)
-            return faq_internal(user_input)
-        return booking_assistant_internal(user_input, session_id)
-
-    if booking_reply:
+    if has_booking_signal:
         return booking_assistant_internal(user_input, session_id)
 
     return faq_internal(user_input)
@@ -588,7 +562,15 @@ def booking_assistant_internal(user_input, session_id=None):
         touch_session(session)
         if request_user_id:
             session["user_id"] = request_user_id
-        
+
+    # If we're waiting for a yes/no confirmation, skip LLM and handle deterministically.
+    if session.get("status") == "awaiting_confirmation":
+        return handle_booking_followup(user_input, session_id, session)
+
+    # If the user picked a slot we offered, go straight to follow-up flow.
+    if session.get("available_slots") and user_input in session["available_slots"]:
+        return handle_booking_followup(user_input, session_id, session)
+
     intent = extract_booking_intent(user_input)
 
     # If we're already in a booking thread and still waiting for a service, use the raw reply as a fallback service guess.
