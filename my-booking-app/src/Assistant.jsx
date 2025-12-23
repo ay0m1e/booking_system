@@ -8,7 +8,6 @@ const API_ROOT = "https://bookingsystem-production-19c2.up.railway.app";
 export default function Assistant() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
   const msgIdRef = useRef(0);
@@ -25,55 +24,6 @@ export default function Assistant() {
     return id;
   };
 
-  // Reuse the same token lookup logic used in booking so assistant requests carry auth when available.
-  const tokenKeyHints = [
-    "ms_token",
-    "token",
-    "maneAuthToken",
-    "maneToken",
-    "bookingToken",
-    "authToken",
-    "jwt",
-    "accessToken",
-  ];
-
-  function getStoredToken() {
-    const stores = [localStorage, sessionStorage].filter(Boolean);
-
-    // First, check known keys in order so we don't pick an old/stale token.
-    for (const store of stores) {
-      for (const key of tokenKeyHints) {
-        const val = store.getItem(key);
-        if (val) return val;
-      }
-    }
-
-    // Fallback: any key containing "token".
-    for (const store of stores) {
-      for (let idx = 0; idx < store.length; idx += 1) {
-        const keyName = store.key(idx);
-        if (keyName && keyName.toLowerCase().includes("token")) {
-          const value = store.getItem(keyName);
-          if (value) return value;
-        }
-      }
-    }
-
-    // Last resort: check cookies for ms_token/token so logged-in users on another tab are still recognized.
-    const cookies = document.cookie ? document.cookie.split(";") : [];
-    for (const pair of cookies) {
-      const [rawKey, ...rest] = pair.split("=");
-      const key = rawKey && rawKey.trim();
-      if (!key) continue;
-      if (tokenKeyHints.includes(key)) {
-        const val = rest.join("=").trim();
-        if (val) return decodeURIComponent(val);
-      }
-    }
-
-    return "";
-  }
-
   async function sendToAssistant(text) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -84,26 +34,15 @@ export default function Assistant() {
 
     try {
       const payload = { query: trimmed };
-      if (sessionId) payload.session_id = sessionId;
-      const token = getStoredToken();
-      const headers = { "Content-Type": "application/json" };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-        headers.Authorisation = `Bearer ${token}`;
-      }
 
       const res = await fetch(`${API_ROOT}/api/assistant`, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        // Include cookies as a secondary auth path in case the token is stored server-side.
-        credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) throw new Error(data.error || "Unable to reply right now.");
-
-      if (data.session_id) setSessionId(data.session_id);
 
       const reply =
         data.message ||
@@ -112,9 +51,7 @@ export default function Assistant() {
         "I couldn't find an answer just now.";
       addMessage({
         role: "assistant",
-        content: reply,
-        availableSlots: Array.isArray(data.available_slots) ? data.available_slots : [],
-        slotsDisabled: false,
+        content: reply
       });
     } catch (error) {
       addMessage({
@@ -132,13 +69,6 @@ export default function Assistant() {
     sendToAssistant(input);
   }
 
-  function handleSlotClick(msgId, slot) {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, slotsDisabled: true } : m))
-    );
-    sendToAssistant(slot);
-  }
-
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -154,7 +84,7 @@ export default function Assistant() {
           <div className="assistant-header">
             <h1 className="assistant-title">Assistant</h1>
             <p className="assistant-subtitle">
-              Ask anything about booking or salon details and get guided replies.
+              Ask anything about salon details and booking steps—we’ll answer from the FAQ.
             </p>
           </div>
 
@@ -175,21 +105,6 @@ export default function Assistant() {
                 }`}
               >
                 <p className="assistant-bubble__text">{msg.content}</p>
-
-                {msg.role === "assistant" && msg.availableSlots?.length ? (
-                  <div className="assistant-slots">
-                    {msg.availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        className="assistant-slot"
-                        disabled={loading || msg.slotsDisabled}
-                        onClick={() => handleSlotClick(msg.id, slot)}
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
               </div>
             ))}
 
@@ -211,7 +126,7 @@ export default function Assistant() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a question or booking request..."
+              placeholder="Type a question about services, hours, or booking..."
               rows={1}
               disabled={loading}
             />

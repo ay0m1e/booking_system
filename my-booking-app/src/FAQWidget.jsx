@@ -7,7 +7,6 @@ export default function FAQWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
   const msgIdRef = useRef(0);
@@ -34,7 +33,6 @@ export default function FAQWidget() {
 
     try {
       const payload = { query: trimmed };
-      if (sessionId) payload.session_id = sessionId;
 
       const res = await fetch(`${API_ROOT}/api/assistant`, {
         method: "POST",
@@ -45,8 +43,6 @@ export default function FAQWidget() {
 
       if (!res.ok) throw new Error(data.error || "Unable to get an answer right now.");
 
-      if (data.session_id) setSessionId(data.session_id);
-
       const reply =
         data.message ||
         data.answer ||
@@ -54,9 +50,7 @@ export default function FAQWidget() {
         "I couldn't find an answer yet.";
       addMessage({
         role: "assistant",
-        content: reply,
-        availableSlots: Array.isArray(data.available_slots) ? data.available_slots : [],
-        slotsDisabled: false,
+        content: reply
       });
     } catch (error) {
       addMessage({
@@ -72,13 +66,6 @@ export default function FAQWidget() {
     e.preventDefault();
     if (!input.trim() || loading) return;
     sendToAssistant(input);
-  }
-
-  function handleSlotClick(msgId, slot) {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, slotsDisabled: true } : m))
-    );
-    sendToAssistant(slot);
   }
 
   function handleKeyDown(e) {
@@ -100,7 +87,7 @@ export default function FAQWidget() {
             <div>
               <h3 className="faq-widget__title">Assistant</h3>
               <p className="faq-widget__subtitle">
-                Ask about bookings, availability, or salon info.
+                Ask about services, hours, booking steps, or policies.
               </p>
             </div>
             <button
@@ -127,20 +114,6 @@ export default function FAQWidget() {
                 }`}
               >
                 <p className="assistant-bubble__text">{msg.content}</p>
-                {msg.role === "assistant" && msg.availableSlots?.length ? (
-                  <div className="assistant-slots">
-                    {msg.availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        className="assistant-slot"
-                        disabled={loading || msg.slotsDisabled}
-                        onClick={() => handleSlotClick(msg.id, slot)}
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
               </div>
             ))}
 
