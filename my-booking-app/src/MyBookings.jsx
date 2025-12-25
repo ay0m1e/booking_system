@@ -85,14 +85,14 @@ function isPastBooking(dateString, timeString) {
 }
 
 function prettyPaymentMethod(method) {
-  if (!method) return "—";
+  if (!method) return "Pay in person";
   if (method === "online") return "Pay online";
   if (method === "in_person") return "Pay in person";
   return method;
 }
 
 function prettyPaymentStatus(status) {
-  if (!status) return "—";
+  if (!status) return "Pending";
   const clean = String(status).toLowerCase();
   if (clean === "paid") return "Paid";
   if (clean === "pending") return "Pending";

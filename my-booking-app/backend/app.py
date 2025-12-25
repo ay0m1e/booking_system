@@ -909,7 +909,7 @@ def create_checkout_session(user_id):
             "price_data" : {
                 "currency": "gbp",
                 "product_data":{"name" : booking["service"]},
-                "unit_amount":0
+                "unit_amount":100
             },
             "quantity": 1
         }],
