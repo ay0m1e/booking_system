@@ -237,6 +237,8 @@ def admin_get_all_bookings():
                         b.date,
                         b.time,
                         b.notes,
+                        b.payment_method,
+                        b.payment_status,
                         b.created_at
                     FROM bookings b JOIN users u ON b.user_id = u.id
                     ORDER BY b.date ASC, b.time ASC;
@@ -811,6 +813,8 @@ def get_my_bookings(user_id):
                        date,
                        time,
                        notes,
+                       payment_method,
+                       payment_status,
                        created_at,
                        (
                            date < CURRENT_DATE
@@ -950,7 +954,8 @@ def stripe_Webhook():
             cur = connection.cursor()
             cur.execute("""
                         UPDATE bookings
-                        SET payment_status = 'paid'
+                        SET payment_status = 'paid',
+                            payment_method = COALESCE(payment_method, 'online')
                         WHERE id = %s;
                         """, (booking_id,))
             connection.commit()
