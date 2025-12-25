@@ -900,10 +900,63 @@ def create_checkout_session(user_id):
         return jsonify({"error":"Booking already paid"}), 400
     
     
+    frontend_base = os.getenv("FRONTEND_BASE_URL")
+    
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        payment_method_types=["card"],
+        line_items = [{
+            "price_data" : {
+                "currency": "gbp",
+                "product_data":{"name" : booking["service"]},
+                "unit_amount":0
+            },
+            "quantity": 1
+        }],
+        
+        success_url= f"{frontend_base}/payment-success",
+        cancel_url = f"{frontend_base}/payment-cancel",
+        metadata={
+            "booking_id": str(booking["id"])
+        }
+    )
+    
     return jsonify({
-        "message":"Stripe checkout will be created here",
-        "booking_id":booking["id"]
+        "checkout_url" : session.url
     }), 200
+    
+    
+    
+@app.post("/api/payments/webhook")
+def stripe_Webhook():
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature")
+    
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.getenv("STRIPE_WEBHOOK_SECRET")
+        )
+    except Exception as e:
+        print("Webhook error:", e)
+        return "", 400
+    
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        booking_id = session["metadata"].get("booking_id")
+        
+        
+        if booking_id:
+            connection = get_db()
+            cur = connection.cursor()
+            cur.execute("""
+                        UPDATE bookings
+                        SET payment_status = 'paid'
+                        WHERE id = %s;
+                        """, (booking_id,))
+            connection.commit()
+            connection.close()
+            
+    return "", 200
 
 if __name__ == "__main__":
     app.run(debug=True)
