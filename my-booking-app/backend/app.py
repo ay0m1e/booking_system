@@ -10,6 +10,7 @@ import bcrypt
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from groq import Groq
+import stripe
 
 
 from db import get_db
@@ -22,6 +23,8 @@ CORS (app)
 
 # JWT secret comes from .env so I never leak it into git.
 JWT_SECRET = os.getenv("JWT_SECRET")
+
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 ALLOWED_EMAIL_DOMAINS = {
     "gmail.com",
@@ -619,13 +622,15 @@ def login_user():
     
 
 
-def create_booking_in_db(user_id, service, date_string, time_string, notes=None):
+def create_booking_in_db(user_id, service, date_string, time_string, notes=None, payment_method='in_person'):
     
     service = (service or "").strip()
     date_string = (date_string or "").strip()
     time_string = (time_string or "").strip() 
     notes = notes.strip() if isinstance(notes, str) and notes.strip() else None
     
+    if payment_method not in ("in_person", "online"):
+        payment_method = "in_person"
     
     if not service:
         return None, {"error":"Missing service"}, 400
@@ -664,33 +669,37 @@ def create_booking_in_db(user_id, service, date_string, time_string, notes=None)
 
         # create booking 
         cur.execute("""
-            INSERT INTO bookings (user_id, service, date, time, notes)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, user_id, service, date, time, notes, created_at;
-        """, (user_id, service, booking_date, time_string, notes))
+            INSERT INTO bookings (user_id, service, date, time, notes, payment_method, payment_status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, user_id, service, date, time, notes, payment_method, payment_status, created_at;
+        """, (user_id, service, booking_date, time_string, notes, payment_method, 'pending'))
 
         booking = cur.fetchone()
         connection.commit()
         connection.close()
         return booking, None, 201
         
-    except Exception:
+    except Exception as e:
         connection.rollback()
         connection.close()
-        return None, {"error": "Failed to create booking"}
+        print("Booking error:", e)
+        return None, {"error": "Failed to create booking"}, 500
 
 # Booking endpoint needs auth so I know who's making the reservation.
 @app.post("/api/book")
 @require_auth
 def book_appointment(user_id):
     data = request.get_json() or {}
-
+    
+    payment_method = data.get("payment_method", "in_person")
+    
     booking, err, status = create_booking_in_db(
         user_id=user_id,
         service=data.get("service"),
         date_string=data.get("date"),
         time_string=data.get("time"),
-        notes=data.get("notes")
+        notes=data.get("notes"),
+        payment_method = payment_method
     )
 
     if err:
@@ -856,6 +865,45 @@ def delete_booking(booking_id):
     connection.close()
 
     return jsonify({"success": True, "message": "Booking cancelled."})
+
+
+@app.post("/api/payments/create-checkout-session")
+@require_auth
+def create_checkout_session(user_id):
+    data =request.get_json() or {}
+    booking_id = data.get("booking_id")
+    
+    
+    if not booking_id:
+        return jsonify({
+            "error":"Booking id is missing"
+        }), 400
+        
+    connection = get_db()
+    cur = connection.cursor()
+    
+    
+    cur.execute("""
+                SELECT id, service, payment_status
+                FROM bookings
+                WHERE id = %s AND user_id = %s;
+                """, (booking_id, user_id))
+    
+    booking = cur.fetchone()
+    connection.close()
+
+    
+    if not booking:
+        return jsonify({ "error":"Booking not found"}), 400
+    
+    if booking["payment_status"] == "paid":
+        return jsonify({"error":"Booking already paid"}), 400
+    
+    
+    return jsonify({
+        "message":"Stripe checkout will be created here",
+        "booking_id":booking["id"]
+    }), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
