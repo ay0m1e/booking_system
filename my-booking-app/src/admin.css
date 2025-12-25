@@ -125,10 +125,20 @@
   border-color: #e5e7eb;
 }
 
+.admin-badge--success {
+  background: #ecfdf3;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
 .admin-table-actions {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.admin-row--paid {
+  background: #f0fdf4;
 }
 
 @media (max-width: 720px) {

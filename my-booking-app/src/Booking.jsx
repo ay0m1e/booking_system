@@ -207,6 +207,7 @@ export default function Booking() {
   const [slotStack, setSlotStack] = useState([]);
   const [chronTag, setChronTag] = useState("");
   const [notePad, setNotePad] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("in_person");
 
   // Auth + request helpers: keep token, loading flags, status banner, and a way to trigger re-fetches.
   // slotPulse is just a number; bumping it forces the availability effect to run again.
@@ -451,6 +452,7 @@ export default function Booking() {
           date: dtPick,
           time: chronTag,
           notes: notePad.trim() ? notePad.trim() : null,
+          payment_method: paymentMethod,
         }),
       });
 
@@ -458,6 +460,31 @@ export default function Booking() {
 
       if (!res.ok) {
         throw new Error(payload.error || "Unable to confirm booking");
+      }
+
+      const booking = payload.booking || payload;
+
+      if (paymentMethod === "online") {
+        if (!booking?.id) {
+          throw new Error("Booking created but no booking_id was returned.");
+        }
+
+        const sessionRes = await fetch(
+          `${API_ROOT}/api/payments/create-checkout-session`,
+          {
+            method: "POST",
+            headers: buildHeaders(freshPocket.token),
+            body: JSON.stringify({ booking_id: booking.id }),
+          }
+        );
+        const sessionPayload = await sessionRes.json().catch(() => ({}));
+        if (!sessionRes.ok || !sessionPayload.checkout_url) {
+          throw new Error(
+            sessionPayload.error || "Could not start checkout session."
+          );
+        }
+        window.location.href = sessionPayload.checkout_url;
+        return;
       }
 
       setStatusMemo({
@@ -649,11 +676,55 @@ export default function Booking() {
                 <span>Duration</span>
                 <strong>{durationMinutes} mins</strong>
               </div>
+              <div className="booking__summary-line">
+                <span>Payment</span>
+                <strong>
+                  {paymentMethod === "online" ? "Pay online" : "Pay in person"}
+                </strong>
+              </div>
               <p className="booking__helper booking__token-hint">
                 {tokenPocket.token
                   ? `Token ready from ${tokenPocket.source || "storage"}.`
                   : "Sign in so we can attach your booking token."}
               </p>
+            </div>
+          </div>
+
+          <div className="booking__field booking__payment">
+            <label className="booking__label">Payment</label>
+            <div className="booking__payment-options">
+              <label className="booking__payment-option">
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="in_person"
+                  checked={paymentMethod === "in_person"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  disabled={sendGate.firing}
+                />
+                <span>
+                  Pay in person{" "}
+                  <small className="booking__payment-hint">
+                    Settle at the desk after your appointment.
+                  </small>
+                </span>
+              </label>
+              <label className="booking__payment-option">
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="online"
+                  checked={paymentMethod === "online"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  disabled={sendGate.firing}
+                />
+                <span>
+                  Pay online{" "}
+                  <small className="booking__payment-hint">
+                    We’ll send you to checkout after booking.
+                  </small>
+                </span>
+              </label>
             </div>
           </div>
 

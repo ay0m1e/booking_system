@@ -295,6 +295,44 @@
   margin-top: var(--space-2);
 }
 
+.booking__payment {
+  margin-bottom: var(--space-10);
+}
+
+.booking__payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.booking__payment-option {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-soft);
+  background: var(--color-surface);
+}
+
+.booking__payment-option input {
+  width: 18px;
+  height: 18px;
+}
+
+.booking__payment-option span {
+  display: flex;
+  flex-direction: column;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.booking__payment-hint {
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+}
+
 .booking__action-row {
   display: flex;
   flex-direction: column;

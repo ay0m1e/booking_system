@@ -84,6 +84,21 @@ function isPastBooking(dateString, timeString) {
   return combined.getTime() < Date.now();
 }
 
+function prettyPaymentMethod(method) {
+  if (!method) return "—";
+  if (method === "online") return "Pay online";
+  if (method === "in_person") return "Pay in person";
+  return method;
+}
+
+function prettyPaymentStatus(status) {
+  if (!status) return "—";
+  const clean = String(status).toLowerCase();
+  if (clean === "paid") return "Paid";
+  if (clean === "pending") return "Pending";
+  return status;
+}
+
 export default function MyBookings() {
   const navigate = useNavigate();
   const [tokenPocket, setTokenPocket] = useState(() => {
@@ -329,6 +344,17 @@ export default function MyBookings() {
                             ? new Date(booking.created_at).toLocaleString()
                             : "—"}
                         </span>
+                        <span>
+                          Payment: {prettyPaymentMethod(booking.payment_method)} •{" "}
+                          {prettyPaymentStatus(booking.payment_status)}
+                        </span>
+                        {booking.payment_method === "online" &&
+                          String(booking.payment_status).toLowerCase() ===
+                            "pending" && (
+                            <span className="booking-card__chip booking-card__chip--alert">
+                              Payment required
+                            </span>
+                          )}
                       </div>
 
                       <div className="booking-card__actions">
@@ -380,6 +406,17 @@ export default function MyBookings() {
                             ? new Date(booking.created_at).toLocaleString()
                             : "—"}
                         </span>
+                        <span>
+                          Payment: {prettyPaymentMethod(booking.payment_method)} •{" "}
+                          {prettyPaymentStatus(booking.payment_status)}
+                        </span>
+                        {booking.payment_method === "online" &&
+                          String(booking.payment_status).toLowerCase() ===
+                            "pending" && (
+                            <span className="booking-card__chip booking-card__chip--alert">
+                              Payment required
+                            </span>
+                          )}
                       </div>
 
                       <div className="booking-card__actions">

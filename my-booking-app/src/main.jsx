@@ -20,6 +20,8 @@ import AdminBookings from "./AdminBookings";
 import AdminUsers from "./AdminUsers";
 import Assistant from "./Assistant";
 import FAQWidget from "./FAQWidget";
+import PaymentSuccess from "./PaymentSuccess";
+import PaymentCancel from "./PaymentCancel";
 
 import "./index.css";
 
@@ -84,6 +86,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/admin/bookings" element={<AdminBookings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/assistant" element={<Assistant />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-cancel" element={<PaymentCancel />} />
       </Routes>
       <FAQWidget />
     </BrowserRouter>

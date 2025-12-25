@@ -132,6 +132,8 @@ export default function AdminBookings() {
                     <th>Service</th>
                     <th>Date</th>
                     <th>Time</th>
+                    <th>Payment</th>
+                    <th>Status</th>
                     <th>Notes</th>
                     <th>Created</th>
                     <th>Actions</th>
@@ -157,31 +159,51 @@ export default function AdminBookings() {
                     const isPast =
                       Number.isNaN(parsedTime) ? false : bookingDateTime < now;
                     return (
-                      <tr key={bk.id}>
+                      <tr
+                        key={bk.id}
+                        className={
+                          String(bk.payment_status).toLowerCase() === "paid"
+                            ? "admin-row--paid"
+                            : ""
+                        }
+                      >
                         <td data-label="ID">{bk.id}</td>
                         <td data-label="User">{userName}</td>
                         <td data-label="Email">{userEmail}</td>
                         <td data-label="Service">{bk.service}</td>
                         <td data-label="Date">{bk.date}</td>
                         <td data-label="Time">{bk.time}</td>
+                        <td data-label="Payment">
+                          {bk.payment_method || "—"}
+                        </td>
+                        <td data-label="Status">
+                          {String(bk.payment_status || "pending").toLowerCase() ===
+                          "paid" ? (
+                            <span className="admin-badge admin-badge--success">
+                              Paid
+                            </span>
+                          ) : (
+                            <span className="admin-badge">Pending</span>
+                          )}
+                        </td>
                         <td data-label="Notes">{bk.notes || "—"}</td>
-                    <td data-label="Created">
-                      {bk.created_at
-                        ? new Date(bk.created_at).toLocaleString()
-                        : "—"}
-                    </td>
-                    <td data-label="Actions">
-                      <div className="admin-table-actions">
-                        {isPast ? (
-                          <span className="admin-badge admin-badge--muted">
-                            Past booking
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="admin-button"
-                            onClick={() => deleteBooking(bk.id)}
-                            disabled={deleting === bk.id}
+                        <td data-label="Created">
+                          {bk.created_at
+                            ? new Date(bk.created_at).toLocaleString()
+                            : "—"}
+                        </td>
+                        <td data-label="Actions">
+                          <div className="admin-table-actions">
+                            {isPast ? (
+                              <span className="admin-badge admin-badge--muted">
+                                Past booking
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="admin-button"
+                                onClick={() => deleteBooking(bk.id)}
+                                disabled={deleting === bk.id}
                               >
                                 {deleting === bk.id ? "Deleting..." : "Delete"}
                               </button>
