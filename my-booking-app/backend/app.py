@@ -9,7 +9,7 @@ import jwt
 import bcrypt
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from groq import Groq
+from openai import OpenAI
 import stripe
 
 
@@ -38,7 +38,7 @@ ALLOWED_EMAIL_DOMAINS = {
     "mac.com",
 }
 
-groq_client = Groq(api_key = os.getenv("GROQ_API_KEY"))
+openai_client = OpenAI(api_key = os.getenv("OPENAI_API_KEY"))
 
 
 FAQ_PATH = "faq_data.txt"
@@ -81,8 +81,8 @@ def faq_internal(user_input):
         return jsonify({"message": "No FAQ information is currently available", "answer": "No FAQ information is currently available"}), 200
     
     
-    response = groq_client.chat.completions.create(
-        model = "llama-3.1-8b-instant",
+    response = openai_client.chat.completions.create(
+        model = "gpt-4o-mini",
         messages=[
             {
                 "role": "system",
@@ -99,7 +99,9 @@ def faq_internal(user_input):
                 "role":"user",
                 "content": user_input
             }
-        ], temperature=0.3
+        ],
+        temperature=0.3,
+        max_tokens=250
     )
 
     answer = response.choices[0].message.content

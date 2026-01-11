@@ -7,5 +7,5 @@ pyjwt
 python-dotenv
 gunicorn
 passlib[bcrypt]
-groq
+openai
 stripe
